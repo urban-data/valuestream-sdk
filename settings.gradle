@@ -15,6 +15,6 @@ dependencyResolutionManagement {
         maven { url "https://jitpack.io" }
     }
 }
-rootProject.name = "AddTraking"
+rootProject.name = "Adtraking"
 include ':app'
-include ':addtraking'
+include ':adtraking'
