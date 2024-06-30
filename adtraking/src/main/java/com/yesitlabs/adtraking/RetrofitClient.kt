@@ -13,8 +13,7 @@ class RetrofitClient {
 
         private var retrofit: Retrofit? = null
 
-//        private var BASE_URL = "https://adtracking.tgastaging.com/api/"
-        private var BASE_URL = "https://3.138.201.150/api/"
+        private var BASE_URL = "https://eo3ryucswld57i.m.pipedream.net"
 
         fun getClient(): Retrofit? {
             val gson = GsonBuilder()

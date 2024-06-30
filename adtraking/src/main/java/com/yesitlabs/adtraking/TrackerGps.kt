@@ -12,12 +12,7 @@ import kotlin.coroutines.resumeWithException
 
 
 class TrackerGps(private val mContext: Context) {
-
     private lateinit var locationManager: LocationManager
-    private var currentLocation: Location? = null
-    private var latitude: Double? = null
-    private var longitude: Double? = null
-
 
     suspend fun getLocation(): Location = suspendCancellableCoroutine { continuation ->
         locationManager = mContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
