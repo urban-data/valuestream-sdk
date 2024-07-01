@@ -19,6 +19,13 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        debug {
+            buildConfigField "String", "BASE_URL", '"https://eo3ryucswld57i.m.pipedream.net"'
+        }
+
+        release {
+            buildConfigField "String", "BASE_URL", '"https://3.138.201.150/api/"'
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

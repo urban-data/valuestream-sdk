@@ -12,8 +12,7 @@ class RetrofitClient {
     companion object {
 
         private var retrofit: Retrofit? = null
-
-        private var BASE_URL = "https://eo3ryucswld57i.m.pipedream.net"
+        private const val BASE_URL = BuildConfig.BASE_URL
 
         fun getClient(): Retrofit? {
             val gson = GsonBuilder()
@@ -35,8 +34,5 @@ class RetrofitClient {
             .readTimeout(1, TimeUnit.MINUTES) // read timeout
             .addNetworkInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
             .build()
-
     }
-
-
 }

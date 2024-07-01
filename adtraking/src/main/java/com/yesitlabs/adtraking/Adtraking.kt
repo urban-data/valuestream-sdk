@@ -195,7 +195,12 @@ class Adtraking(context: Context) : AppCompatActivity() {
 
                 val sessionTime = Utils.timePassedSince(startTime)
 
-                val apiInterface: Api = RetrofitClient.getClient()!!.create(Api::class.java)
+                val retrofitClient = RetrofitClient.getClient()
+                if(retrofitClient == null) {
+                    Log.e("RetrofitClient", "RetrofitClient.getClient() is null!")
+                    return@launch
+                }
+                val apiInterface: Api = retrofitClient.create(Api::class.java)
 
                 val deviceBrand = getDeviceBrand()
 
