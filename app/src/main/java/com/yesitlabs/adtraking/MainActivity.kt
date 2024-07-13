@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
 
         // Replace these with actual values
         val gender = "male"
-        val licenseKey = "your_license_key"
+        val licenseKey = "07nYbS65pi4b0jUV"
         val yearOfBirth = "1990"
         val email = "example@example.com"
 

@@ -21,19 +21,26 @@ import com.yesitlabs.adtraking.InformationGatherer.getConnectionProvider
 import com.yesitlabs.adtraking.InformationGatherer.getIMEI
 import com.yesitlabs.adtraking.InformationGatherer.getSSID
 import com.yesitlabs.adtraking.InformationGatherer.getConnectionType
+import com.yesitlabs.adtraking.InformationGatherer.getCurrentLocaleLanguage
 import com.yesitlabs.adtraking.InformationGatherer.getDeviceBrand
 import com.yesitlabs.adtraking.InformationGatherer.getDeviceModel
+import com.yesitlabs.adtraking.InformationGatherer.getDeviceOS
 import com.yesitlabs.adtraking.InformationGatherer.getDeviceOSV
 import com.yesitlabs.adtraking.InformationGatherer.getDeviceType
 import com.yesitlabs.adtraking.InformationGatherer.getIPV4Address
 import com.yesitlabs.adtraking.InformationGatherer.getIPV6Address
+import com.yesitlabs.adtraking.InformationGatherer.getMCC
+import com.yesitlabs.adtraking.InformationGatherer.getMNC
+import com.yesitlabs.adtraking.InformationGatherer.getMaidType
 import com.yesitlabs.adtraking.Utils.alertBoxLocation
 import com.yesitlabs.adtraking.Utils.calculateMD5HashEmail
 import com.yesitlabs.adtraking.Utils.calculateSHA256Hash
 import com.yesitlabs.adtraking.Utils.displayLocationSettingsRequest
+import com.yesitlabs.adtraking.Utils.getCurrentUnixTimestamp
 import com.yesitlabs.adtraking.Utils.isGPSEnabled
 import com.yesitlabs.adtraking.Utils.isLocationPermissionGranted
 import com.yesitlabs.adtraking.Utils.isOnline
+import com.yesitlabs.adtraking.Utils.timePassedSince
 import kotlinx.coroutines.*
 import retrofit2.Call
 import retrofit2.Response
@@ -130,169 +137,102 @@ class Adtraking(context: Context) : AppCompatActivity() {
         val ctx = getContext() ?: return
 
         GlobalScope.launch(Dispatchers.Main) {
-            val horizontalAccuracy: Float
-            val verticalAccuracy: Float
-            val speed: Float
-            val gpsLat: Double
-            val gpsLong: Double
-            val altitude: Double
-            val locationType: String
-            val gps = TrackerGps(ctx)
-            val gpsLocation = gps.getLocation()
-            if (gpsLocation != null) {
-                horizontalAccuracy = gpsLocation.accuracy
-                verticalAccuracy = gpsLocation.verticalAccuracyMeters
-                gpsLat = gpsLocation.latitude
-                gpsLong = gpsLocation.longitude
-                altitude = gpsLocation.altitude
-                locationType = gpsLocation.provider.toString()
-                speed = gpsLocation.speedAccuracyMetersPerSecond
-                val (postalCode, country) = getPostalCodeAndCountry(
-                    ctx,
-                    gpsLocation.latitude,
-                    gpsLocation.longitude
-                )
+            val retrofitClient = RetrofitClient.getClient()
+            if (retrofitClient == null) {
+                Log.e("RetrofitClient", "RetrofitClient.getClient() is null!")
+                return@launch
+            }
 
-                val advertisingId = getAdvertisingId(ctx)
+            val gpsLocation = TrackerGps(ctx).getLocation()
+            val (postalCode, country) = getPostalCodeAndCountry(
+                ctx,
+                gpsLocation.latitude,
+                gpsLocation.longitude
+            )
+            val deviceBrand = getDeviceBrand()
+            val deviceModel = getDeviceModel()
+            val deviceBrandAndModel = "$deviceBrand $deviceModel"
+            val call: Call<ApiModel> = retrofitClient.create(Api::class.java).addData(
+                licensekey,
+                getCurrentUnixTimestamp(),
+                getDeviceType(),
+                getDeviceOS(),
+                getDeviceOSV(),
+                getConnectionType(ctx),
+                getConnectionProvider(ctx),
+                country,
+                getConnectionCountryCode(ctx),
+                getIPV4Address(),
+                getIPV6Address(),
+                gpsLocation.latitude.toString(),
+                gpsLocation.longitude.toString(),
+                gpsLocation.altitude.toString(),
+                gpsLocation.provider,
+                timePassedSince(startTime),
+                getCurrentLocaleLanguage(),
+                getUserAgent(ctx),
+                getAdvertisingId(ctx),
+                getMaidType(),
+                deviceModel,
+                deviceBrandAndModel,
+                deviceBrand,
+                gpsLocation.speedAccuracyMetersPerSecond.toString(),
+                gpsLocation.accuracy.toString(),
+                gpsLocation.verticalAccuracyMeters.toString(),
+                calculateMD5HashEmail(email),
+                calculateSHA256Hash("Phone"),
+                getIMEI(ctx),
+                getBSSID(ctx),
+                getSSID(ctx),
+                getAppName(ctx),
+                getAppBundleId(ctx),
+                getKeyboardLanguage(ctx),
+                gender,
+                yod,
+                getVendorIdentifier(ctx),
+                postalCode,
+                getMNC(ctx),
+                getMCC(ctx),
+            )
 
-                val maididType = "GAID"
-
-                val cellId = getVendorIdentifier(ctx)
-
-                val userAgent = getUserAgent(ctx)
-
-                val language = getKeyboardLanguage(ctx)
-
-                val appBundleId = getAppBundleId(ctx)
-
-                val appName = getAppName(ctx)
-
-                val sSID = getSSID(ctx)
-
-                val bSSID = getBSSID(ctx)
-
-                val imei = getIMEI(ctx)
-
-                val countryCode = getConnectionCountryCode(ctx)
-
-                val connectionProvider = getConnectionProvider(ctx)
-
-                val connectionType = getConnectionType(ctx)
-
-                val deviceType = getDeviceType(ctx)
-
-                val mnc = ctx.resources.configuration.mnc
-
-                val mcc = ctx.resources.configuration.mcc
-
-                val mSISDN = calculateSHA256Hash("Phone")
-
-                val hem = calculateMD5HashEmail(email)
-
-                val currentLocale = Locale.getDefault()
-
-                val languageDisplayName = currentLocale.getDisplayName(currentLocale)
-
-                val sessionTime = Utils.timePassedSince(startTime)
-
-                val retrofitClient = RetrofitClient.getClient()
-                if(retrofitClient == null) {
-                    Log.e("RetrofitClient", "RetrofitClient.getClient() is null!")
-                    return@launch
-                }
-                val apiInterface: Api = retrofitClient.create(Api::class.java)
-
-                val deviceBrand = getDeviceBrand()
-
-                val deviceModel = getDeviceModel()
-
-                val deviceBrandAndModel = "$deviceBrand $deviceModel"
-
-                val deviceOSV = getDeviceOSV()
-
-                val call: Call<ApiModel> = apiInterface.addData(
-                    licensekey,
-                    deviceType,
-                    deviceBrandAndModel,
-                    gpsLat.toString(),
-                    gpsLong.toString(),
-                    gender,
-                    altitude.toString(),
-                    maididType,
-                    cellId,
-                    userAgent,
-                    language,
-                    appBundleId,
-                    appName,
-                    sSID,
-                    bSSID,
-                    imei,
-                    hem,
-                    locationType,
-                    verticalAccuracy.toString(),
-                    horizontalAccuracy.toString(),
-                    country,
-                    countryCode,
-                    connectionProvider,
-                    deviceOSV,
-                    "android",
-                    deviceModel,
-                    deviceBrand,
-                    connectionType,
-                    getIPV4Address(),
-                    getIPV6Address(),
-                    postalCode,
-                    yod,
-                    mnc.toString(),
-                    mcc.toString(),
-                    sessionTime,
-                    "",
-                    speed.toString(),
-                    formattedTimestamp.toString(),
-                    mSISDN,
-                    advertisingId,
-                    languageDisplayName
-                )
-                call.enqueue(object : retrofit2.Callback<ApiModel> {
-                    override fun onResponse(
-                        call: Call<ApiModel>,
-                        response: Response<ApiModel>
-                    ) {
-                        try {
-                            if (response.body()!!.success) {
-                                val sendError = ApiModel(
-                                    response.body()!!.license_key,
-                                    response.body()!!.message,
-                                    response.body()!!.success
+            call.enqueue(object : retrofit2.Callback<ApiModel> {
+                override fun onResponse(
+                    call: Call<ApiModel>,
+                    response: Response<ApiModel>
+                ) {
+                    try {
+                        val response_body = response.body()
+                        if (response.isSuccessful && response_body != null) {
+                                val res = ApiModel(
+                                    response_body.license_key,
+                                    response_body.message,
+                                    true
                                 )
-                                Toast.makeText(ctx, sendError.message, Toast.LENGTH_SHORT)
+                                Toast.makeText(ctx, res.message, Toast.LENGTH_SHORT)
                                     .show()
                             } else {
-                                val sendError = ApiModel(
-                                    license_key = "non",
-                                    message = "Something went wrong",
-                                    success = false
+                                val error = ApiModel(
+                                    "N/A",
+                                    "An error occurred",
+                                    false
                                 )
-                                Toast.makeText(ctx, sendError.message, Toast.LENGTH_SHORT)
+                                Toast.makeText(ctx, error.message, Toast.LENGTH_SHORT)
                                     .show()
                             }
-                        } catch (e: Exception) {
-                            Toast.makeText(ctx, e.message, Toast.LENGTH_SHORT).show()
-                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(ctx, e.message, Toast.LENGTH_SHORT).show()
                     }
+                }
 
-                    override fun onFailure(call: Call<ApiModel>, t: Throwable) {
-                        val sendError = ApiModel(
-                            license_key = "non",
-                            message = "Something went wrong",
-                            success = false
-                        )
-                        Toast.makeText(ctx, sendError.message, Toast.LENGTH_SHORT).show()
-                    }
-                })
-            } else {
-                Toast.makeText(ctx, "Api Not working", Toast.LENGTH_SHORT).show()
-            }
+                override fun onFailure(call: Call<ApiModel>, t: Throwable) {
+                    val error = ApiModel(
+                        license_key = "non",
+                        message = "An error occurred: " + t.message,
+                        success = false
+                    )
+                    Toast.makeText(ctx, error.message, Toast.LENGTH_SHORT).show()
+                }
+            })
         }
     }
 

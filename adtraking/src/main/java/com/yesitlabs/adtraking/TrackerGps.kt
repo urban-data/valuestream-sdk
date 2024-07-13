@@ -26,7 +26,6 @@ class TrackerGps(private val mContext: Context) {
             override fun onLocationChanged(p0: Location) {
                 locationByGps = p0
                 if (locationByGps != null && locationByNetwork != null) {
-
                     continuation.resume(getBetterLocation(locationByGps, locationByNetwork)!!)
                     locationManager.removeUpdates(this)
                 }
@@ -37,7 +36,6 @@ class TrackerGps(private val mContext: Context) {
             override fun onLocationChanged(location: Location) {
                 locationByNetwork = location
                 if (locationByGps != null && locationByNetwork != null) {
-//                    continuation.resume(getBetterLocation(locationByGps, locationByNetwork)!!)
                     locationManager.removeUpdates(this)
                 }
             }
@@ -54,7 +52,7 @@ class TrackerGps(private val mContext: Context) {
                     ) != PackageManager.PERMISSION_GRANTED
                 ) {
 
-                     return@suspendCancellableCoroutine
+                    return@suspendCancellableCoroutine
                 }
 
                 locationManager.requestLocationUpdates(
@@ -82,7 +80,7 @@ class TrackerGps(private val mContext: Context) {
                 continuation.resume(getBetterLocation(locationByGps, locationByNetwork)!!)
             }
         } else {
-           // startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            // startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
 
             continuation.resumeWithException(Exception("GPS and Network providers are disabled"))
         }
@@ -100,4 +98,4 @@ class TrackerGps(private val mContext: Context) {
         private const val REQUEST_LOCATION_PERMISSION = 1
     }
 
- }
+}

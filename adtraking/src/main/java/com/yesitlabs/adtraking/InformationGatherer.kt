@@ -266,6 +266,10 @@ object InformationGatherer {
         }
     }
 
+    fun getMaidType(): String {
+        return "GAID"
+    }
+
     fun getDeviceBrand(): String? {
         return Build.MANUFACTURER
     }
@@ -274,7 +278,23 @@ object InformationGatherer {
         return Build.MODEL
     }
 
+    fun getDeviceOS() : String {
+        return "Android ${Build.VERSION.SDK_INT} (${Build.VERSION.RELEASE})"
+    }
     fun getDeviceOSV() : String? {
         return Build.VERSION.RELEASE
+    }
+
+    fun getCurrentLocaleLanguage(): String {
+        val currentLocale = Locale.getDefault()
+        return currentLocale.getDisplayName(currentLocale)
+    }
+
+    fun getMNC(ctx: Context) : String {
+        return ctx.resources.configuration.mnc.toString()
+    }
+
+    fun getMCC(ctx: Context) : String {
+        return ctx.resources.configuration.mcc.toString()
     }
 }

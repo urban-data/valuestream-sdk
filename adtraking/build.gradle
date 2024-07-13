@@ -20,11 +20,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            buildConfigField "String", "BASE_URL", '"https://eo3ryucswld57i.m.pipedream.net"'
+            buildConfigField "String", "BASE_URL", '"http://34.227.117.155:8060"'
         }
 
         release {
-            buildConfigField "String", "BASE_URL", '"https://3.138.201.150/api/"'
+            buildConfigField "String", "BASE_URL", '"http://34.227.117.155:8060"'
         }
     }
     compileOptions {

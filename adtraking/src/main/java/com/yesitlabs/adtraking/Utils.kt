@@ -172,4 +172,8 @@ object Utils {
             connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
         return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
+
+    fun getCurrentUnixTimestamp(): String {
+        return (System.currentTimeMillis() / 1000L).toString()
+    }
 }
