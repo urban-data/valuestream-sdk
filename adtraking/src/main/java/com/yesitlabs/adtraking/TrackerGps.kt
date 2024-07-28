@@ -1,101 +1,103 @@
 package com.yesitlabs.adtraking
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
-import androidx.core.app.ActivityCompat
+import com.yesitlabs.adtraking.Utils.isPermissionGranted
+import com.yesitlabs.adtraking.Utils.logError
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
-
-class TrackerGps(private val mContext: Context) {
+// maybe make this a non-singleton later if need be
+object TrackerGps {
+    private lateinit var contextRef: WeakReference<Context>
     private lateinit var locationManager: LocationManager
+    private var locationMinTimeMS: Long = 5000
+    private var locationMinDistanceM: Float = 0F
 
-    suspend fun getLocation(): Location = suspendCancellableCoroutine { continuation ->
-        locationManager = mContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val hasGps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        val hasNetwork = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-        var locationByGps: Location? = null
-        var locationByNetwork: Location? = null
+    fun initialize(ctx: Context) {
+        contextRef = WeakReference(ctx)
+        locationManager = ctx.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    }
 
+    // Suppressing MissingPermission as Android Studio doesn't understand I actually do check for permissions
+    @SuppressLint("MissingPermission")
+    suspend fun getLocation(): Location? = withContext(Dispatchers.Main) {
+        suspendCancellableCoroutine { continuation ->
+            val ctx = contextRef.get()
+            if (ctx == null) {
+                continuation.resume(null)
+                return@suspendCancellableCoroutine
+            }
 
-        val gpsLocationListener = object : android.location.LocationListener {
-            override fun onLocationChanged(p0: Location) {
-                locationByGps = p0
-                if (locationByGps != null && locationByNetwork != null) {
-                    continuation.resume(getBetterLocation(locationByGps, locationByNetwork)!!)
+            val hasGps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            val hasNetwork = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            val isCoarseLocationEnabled =
+                isPermissionGranted(ctx, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+            val isFineLocationEnabled =
+                isPermissionGranted(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)
+
+            val noPermissions = (!isFineLocationEnabled && !isCoarseLocationEnabled);
+            val noProviders = (!hasGps && !hasNetwork)
+            val invalidPermissionProviderCase = (!hasNetwork && !isFineLocationEnabled)
+
+            if (noPermissions || noProviders || invalidPermissionProviderCase) {
+                if (noPermissions) {
+                    logError("Neither ACCESS_COARSE_LOCATION nor ACCESS_FINE_LOCATION permissions were provided!")
+                } else if (noProviders) {
+                    logError("Neither the network nor the GPS provider is enabled!")
+                } else {
+                    logError("The GPS provider is enabled, but permissions required aren't! Likewise, the permissions for network provider are enabled, but the network provider isn't!")
+                }
+                continuation.resume(null)
+                return@suspendCancellableCoroutine
+            }
+
+            var currentLocation: Location? = null
+
+            val locationListener = object : android.location.LocationListener {
+                override fun onLocationChanged(location: Location) {
+                    continuation.resume(getBetterLocation(currentLocation, location))
+                    currentLocation = location;
                     locationManager.removeUpdates(this)
                 }
             }
-        }
 
-        val networkLocationListener = object : android.location.LocationListener {
-            override fun onLocationChanged(location: Location) {
-                locationByNetwork = location
-                if (locationByGps != null && locationByNetwork != null) {
-                    locationManager.removeUpdates(this)
-                }
-            }
-        }
-
-        if (hasGps || hasNetwork) {
-            if (hasGps) {
-                if (ActivityCompat.checkSelfPermission(
-                        mContext,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                        mContext,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-
-                    return@suspendCancellableCoroutine
-                }
-
+            if (hasGps && isFineLocationEnabled) {
                 locationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
-                    5000,
-                    0F,
-                    gpsLocationListener
+                    locationMinTimeMS,
+                    locationMinDistanceM,
+                    locationListener
                 )
-            }
-            if (hasNetwork) {
+            } else { // this means network provider and coarse location permission is enabled
                 locationManager.requestLocationUpdates(
                     LocationManager.NETWORK_PROVIDER,
-                    5000,
-                    0F,
-                    networkLocationListener
+                    locationMinTimeMS,
+                    locationMinDistanceM,
+                    locationListener
                 )
             }
 
             continuation.invokeOnCancellation {
-                locationManager.removeUpdates(gpsLocationListener)
-                locationManager.removeUpdates(networkLocationListener)
+                locationManager.removeUpdates(locationListener)
             }
-
-            if (locationByGps != null && locationByNetwork != null) {
-                continuation.resume(getBetterLocation(locationByGps, locationByNetwork)!!)
-            }
-        } else {
-            // startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-
-            continuation.resumeWithException(Exception("GPS and Network providers are disabled"))
         }
     }
 
-    private fun getBetterLocation(locationByGps: Location?, locationByNetwork: Location?): Location? {
+    private fun getBetterLocation(
+        locationByGps: Location?,
+        locationByNetwork: Location?
+    ): Location? {
         return if (locationByGps != null && locationByNetwork != null) {
             if (locationByGps.accuracy > locationByNetwork.accuracy) locationByGps else locationByNetwork
         } else {
             locationByGps ?: locationByNetwork
         }
-    }
-
-    companion object {
-        private const val REQUEST_LOCATION_PERMISSION = 1
     }
 
 }

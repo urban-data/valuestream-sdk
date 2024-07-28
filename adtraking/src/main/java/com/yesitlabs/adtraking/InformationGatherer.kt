@@ -11,36 +11,43 @@ import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.provider.Settings
+import android.telephony.CellInfoGsm
 import android.telephony.TelephonyManager
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebSettings
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.internal.uppercase
 import java.net.NetworkInterface
 import java.util.Collections
 import java.util.Locale
+import android.location.Location
+import android.telephony.CellInfo
+import android.telephony.CellInfoLte
+import android.webkit.WebView
+import com.yesitlabs.adtraking.Utils.isPermissionGranted
+import com.yesitlabs.adtraking.Utils.md5Hash
+import kotlinx.coroutines.tasks.await
 
 object InformationGatherer {
-
-    fun getDeviceType(): String {
-        return "Android"
-    }
-
-    fun getAndroidId(context: Context): String {
-        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-    }
-
     fun getDeviceType(context: Context): String {
-        return when (context.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK) {
-            Configuration.SCREENLAYOUT_SIZE_LARGE,
-            Configuration.SCREENLAYOUT_SIZE_XLARGE -> "tablet"
-            else -> "mobile"
+        val configuration = context.resources.configuration
+        val screenLayout = configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK
+
+        return when {
+            configuration.smallestScreenWidthDp >= 600 -> "Tablet"
+
+            screenLayout == Configuration.SCREENLAYOUT_SIZE_LARGE ||
+                    screenLayout == Configuration.SCREENLAYOUT_SIZE_XLARGE -> "Tablet"
+
+            else -> "Mobile"
         }
     }
 
-     fun getConnectionType(context: Context): String {
+    fun getConnectionType(context: Context): String {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork
@@ -49,10 +56,10 @@ object InformationGatherer {
             return when {
                 it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "Wi-Fi"
                 it.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Mobile Data"
-                else -> "No Connection"
+                else -> ""
             }
         }
-        return "No Connection"
+        return ""
     }
 
     private fun getIPAddress(useIPv4: Boolean): String {
@@ -92,53 +99,26 @@ object InformationGatherer {
         return getIPAddress(useIPv4 = false)
     }
 
-    fun getConnectionProvider(context: Context): String? {
+    fun getConnectionProvider(context: Context): String {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val network = connectivityManager.activeNetwork ?: return null
-            val networkCapabilities =
-                connectivityManager.getNetworkCapabilities(network) ?: return null
-            return when {
-                networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
-                    val wifiManager =
-                        context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-                    val wifiInfo = wifiManager.connectionInfo
-                    return if (wifiInfo.ssid != null && wifiInfo.ssid != "<unknown ssid>") {
-                        wifiInfo.ssid.replace("\"", "") // Remove quotes around the SSID
-                    } else {
-                        "Unknown Wi-Fi Network"
-                    }
-                }
-
-                networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
-                    val telephonyManager =
-                        context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-                    val networkInfo = telephonyManager.networkOperatorName
-                    networkInfo ?: "Unknown Cellular Network"
-                }
-
-                else -> null
+        val activeNetworkInfo = connectivityManager.activeNetworkInfo ?: return ""
+        return when (activeNetworkInfo.type) {
+            ConnectivityManager.TYPE_WIFI -> {
+                val telephonyManager =
+                    context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+                val networkInfo = telephonyManager.networkOperatorName
+                networkInfo ?: ""
             }
-        } else {
-            val activeNetworkInfo = connectivityManager.activeNetworkInfo ?: return null
-            return when (activeNetworkInfo.type) {
-                ConnectivityManager.TYPE_WIFI -> {
-                    val telephonyManager =
-                        context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-                    val networkInfo = telephonyManager.networkOperatorName
-                    networkInfo ?: "Unknown Cellular Network"
-                }
 
-                ConnectivityManager.TYPE_MOBILE -> {
-                    val telephonyManager =
-                        context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-                    val networkInfo = telephonyManager.networkOperatorName
-                    networkInfo ?: "Unknown Cellular Network"
-                }
-
-                else -> null
+            ConnectivityManager.TYPE_MOBILE -> {
+                val telephonyManager =
+                    context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+                val networkInfo = telephonyManager.networkOperatorName
+                networkInfo ?: ""
             }
+
+            else -> ""
         }
     }
 
@@ -150,54 +130,71 @@ object InformationGatherer {
         return countryCode
     }
 
-    suspend fun getPostalCodeAndCountry(
+    suspend fun getCountry(
         context: Context,
         latitude: Double,
         longitude: Double
     ): Pair<String, String> {
         return withContext(Dispatchers.IO) {
             val geocoder = Geocoder(context, Locale.getDefault())
-            var postalCode = "No Postal Code Found"
-            var country = "No Country Found"
+            var country = ""
+            var countryCode = ""
             try {
                 val addresses: List<Address>? = geocoder.getFromLocation(latitude, longitude, 1)
                 addresses?.let {
                     if (it.isNotEmpty()) {
                         val address = it[0]
-                        if(address.postalCode != null) {
-                            postalCode = address.postalCode
-                        }
-
-                        if(address.countryCode != null) {
-                            country = address.countryName ?: country
+                        if (address.countryCode != null) {
+                            country = address.countryName
+                            countryCode = address.countryCode
                         }
                     }
                 }
-            } catch (_: Exception) { }
-            Pair(postalCode, country)
+            } catch (_: Exception) {
+            }
+            Pair(country, countryCode)
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun getBearingTo(context: Context, targetLat: Double, targetLon: Double): Float? {
+        val fusedLocationClient: FusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(context)
+
+        if (isPermissionGranted(context, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+            && isPermissionGranted(context, android.Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            return null
+        }
+
+        val currentLocation = fusedLocationClient.lastLocation.await()
+
+        if (currentLocation != null) {
+            val targetLocation = Location("").apply {
+                latitude = targetLat
+                longitude = targetLon
+            }
+
+            return currentLocation.bearingTo(targetLocation)
+        }
+        return null
     }
 
 
     @SuppressLint("HardwareIds")
-    fun getIMEI(context: Context): String {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-        } else {
-            val telephonyManager =
-                context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            telephonyManager.imei ?: Settings.Secure.getString(
-                context.contentResolver,
-                Settings.Secure.ANDROID_ID
-            )
-        }
+    fun getHashedIMEI(context: Context): String {
+        if(!isPermissionGranted(context, android.Manifest.permission.READ_PHONE_STATE)) return ""
+
+        val telephonyManager =
+            context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        return md5Hash(telephonyManager.imei)
     }
 
-    fun getBSSID(context: Context): String? {
+    fun getBSSID(context: Context): String {
         val wifiManager =
             context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val wifiInfo = wifiManager.connectionInfo
-        return wifiInfo?.bssid
+        return wifiInfo?.bssid ?: ""
     }
 
     fun getSSID(context: Context): String {
@@ -214,7 +211,7 @@ object InformationGatherer {
                 }
             }
         }
-        return "SSID not available"
+        return ""
     }
 
     fun getAppName(context: Context): String {
@@ -222,7 +219,7 @@ object InformationGatherer {
             val appInfo = context.packageManager.getApplicationInfo(context.packageName, 0)
             context.packageManager.getApplicationLabel(appInfo).toString()
         } catch (e: Exception) {
-            "App Name Not Found"
+            ""
         }
     }
 
@@ -233,22 +230,15 @@ object InformationGatherer {
     fun getKeyboardLanguage(context: Context): String {
         val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
         val ims = imm?.currentInputMethodSubtype
-        return ims?.languageTag ?: "Unknown"
-    }
-
-    fun getUserAgent(context: Context): String {
-        val webView = android.webkit.WebView(context)
-        val settings: WebSettings = webView.settings
-        return settings.userAgentString
+        return ims?.languageTag ?: ""
     }
 
     @SuppressLint("HardwareIds")
-    fun getVendorIdentifier(context: Context): String {
-        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-            ?: "Unknown"
+    fun getHashedAndroidID(context: Context): String {
+        return md5Hash(Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID))
     }
 
-    suspend fun getAdvertisingId(applicationContext: Context): String {
+    suspend fun getMAID(applicationContext: Context): String {
         return withContext(Dispatchers.IO) {
             var advertisingId = ""
             try {
@@ -278,10 +268,11 @@ object InformationGatherer {
         return Build.MODEL
     }
 
-    fun getDeviceOS() : String {
+    fun getDeviceOS(): String {
         return "Android ${Build.VERSION.SDK_INT} (${Build.VERSION.RELEASE})"
     }
-    fun getDeviceOSV() : String? {
+
+    fun getDeviceOSV(): String {
         return Build.VERSION.RELEASE
     }
 
@@ -290,11 +281,77 @@ object InformationGatherer {
         return currentLocale.getDisplayName(currentLocale)
     }
 
-    fun getMNC(ctx: Context) : String {
+    fun getMNC(ctx: Context): String {
         return ctx.resources.configuration.mnc.toString()
     }
 
-    fun getMCC(ctx: Context) : String {
+    fun getMCC(ctx: Context): String {
         return ctx.resources.configuration.mcc.toString()
+    }
+
+    suspend fun getUserAgent(context: Context): String = withContext(Dispatchers.Main) {
+        val webView = WebView(context)
+        val settings: WebSettings = webView.settings
+        settings.userAgentString
+    }
+
+    @SuppressLint("MissingPermission")
+    fun getCellLac(ctx: Context): String {
+        if (!isPermissionGranted(ctx, android.Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            return ""
+        }
+
+        val telephonyManager = ctx.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+
+        val cellInfoList = telephonyManager.allCellInfo
+        for (cellInfo in cellInfoList) {
+            if (cellInfo is CellInfoGsm) {
+                val cellIdentity = cellInfo.cellIdentity
+                return cellIdentity.lac.toString()
+            }
+        }
+
+        return ""
+    }
+
+    @SuppressLint("MissingPermission", "HardwareIds")
+    fun getHashedMSISDN(ctx: Context): String {
+        if (!isPermissionGranted(
+                ctx,
+                android.Manifest.permission.READ_PHONE_STATE
+            ) || !isPermissionGranted(
+                ctx,
+                android.Manifest.permission.READ_SMS
+            ) || !isPermissionGranted(ctx, android.Manifest.permission.READ_PHONE_NUMBERS)
+        ) return ""
+
+        val telephonyManager = ctx.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        return md5Hash(telephonyManager.line1Number)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun getCellId(ctx: Context): String {
+        if (!isPermissionGranted(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)
+            && !isPermissionGranted(ctx, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+            || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    && !isPermissionGranted(ctx, android.Manifest.permission.READ_PHONE_STATE))
+        ) {
+            return ""
+        }
+
+        val telephonyManager =
+            ctx.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+
+        val cellInfoList: List<CellInfo> = telephonyManager.allCellInfo
+
+        for (cellInfo in cellInfoList) {
+            if (cellInfo is CellInfoLte) {
+                val cellIdentityLte = cellInfo.cellIdentity
+                val cellId = cellIdentityLte.ci
+                return cellId.toString()
+            }
+        }
+
+        return ""
     }
 }

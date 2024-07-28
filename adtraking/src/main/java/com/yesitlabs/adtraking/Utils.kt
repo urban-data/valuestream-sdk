@@ -1,117 +1,54 @@
 package com.yesitlabs.adtraking
 
-import android.Manifest
-import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
-import android.content.IntentSender
 import android.content.pm.PackageManager
-import android.location.LocationManager
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.net.Uri
-import android.provider.Settings
-import android.util.Log
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.location.LocationSettingsResponse
-import com.google.android.gms.location.LocationSettingsStatusCodes
-import com.google.android.gms.tasks.Task
-import java.nio.charset.StandardCharsets
+import android.util.Log
+import com.yesitlabs.adtraking.InformationGatherer.getAppBundleId
+import com.yesitlabs.adtraking.InformationGatherer.getAppName
+import com.yesitlabs.adtraking.InformationGatherer.getBSSID
+import com.yesitlabs.adtraking.InformationGatherer.getBearingTo
+import com.yesitlabs.adtraking.InformationGatherer.getCellId
+import com.yesitlabs.adtraking.InformationGatherer.getCellLac
+import com.yesitlabs.adtraking.InformationGatherer.getConnectionProvider
+import com.yesitlabs.adtraking.InformationGatherer.getConnectionType
+import com.yesitlabs.adtraking.InformationGatherer.getCountry
+import com.yesitlabs.adtraking.InformationGatherer.getCurrentLocaleLanguage
+import com.yesitlabs.adtraking.InformationGatherer.getDeviceBrand
+import com.yesitlabs.adtraking.InformationGatherer.getDeviceModel
+import com.yesitlabs.adtraking.InformationGatherer.getDeviceOS
+import com.yesitlabs.adtraking.InformationGatherer.getDeviceOSV
+import com.yesitlabs.adtraking.InformationGatherer.getDeviceType
+import com.yesitlabs.adtraking.InformationGatherer.getHashedAndroidID
+import com.yesitlabs.adtraking.InformationGatherer.getHashedIMEI
+import com.yesitlabs.adtraking.InformationGatherer.getHashedMSISDN
+import com.yesitlabs.adtraking.InformationGatherer.getIPV4Address
+import com.yesitlabs.adtraking.InformationGatherer.getIPV6Address
+import com.yesitlabs.adtraking.InformationGatherer.getKeyboardLanguage
+import com.yesitlabs.adtraking.InformationGatherer.getMAID
+import com.yesitlabs.adtraking.InformationGatherer.getMCC
+import com.yesitlabs.adtraking.InformationGatherer.getMNC
+import com.yesitlabs.adtraking.InformationGatherer.getMaidType
+import com.yesitlabs.adtraking.InformationGatherer.getSSID
+import com.yesitlabs.adtraking.InformationGatherer.getUserAgent
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.Calendar
 
 object Utils {
-    /**
-     * This function is use for when mobile location is disable of the user mobile
-     */
-    fun displayLocationSettingsRequest(context: Context, onSuccess: () -> Unit) {
-        val locationRequest = LocationRequest.create().apply {
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            interval = 10000
-            fastestInterval = 1000
-            numUpdates = 1
-        }
-        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
-        builder.setAlwaysShow(true)
-        val task: Task<LocationSettingsResponse> =
-            LocationServices.getSettingsClient(context).checkLocationSettings(builder.build())
-        task.addOnSuccessListener {
-            onSuccess.invoke()
-        }
-        task.addOnFailureListener { exception ->
-            val status = (exception as? ResolvableApiException)?.status
-            when (status?.statusCode) {
-                LocationSettingsStatusCodes.RESOLUTION_REQUIRED -> {
-                    Log.i(
-                        "Sdk",
-                        "Location settings are not satisfied. Show the user a dialog to upgrade location settings"
-                    )
-                    try {
-                        status.resolution?.let {
-                            // Show the dialog by calling startIntentSenderForResult(), and check the result in onActivityResult().
-                            (context as? Activity)?.startIntentSenderForResult(
-                                it.intentSender,
-                                100,
-                                null,
-                                0,
-                                0,
-                                0,
-                                null
-                            )
-                        }
-                    } catch (e: IntentSender.SendIntentException) {
-                        Log.i("Sdk", "PendingIntent unable to execute request.")
-                    }
-                }
+    var SDK_LOG_TAG: String = "AdTraking"
 
-                LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE ->
-                    Log.i(
-                        "Sdk",
-                        "Location settings are inadequate, and cannot be fixed here. Dialog not created."
-                    )
-            }
-        }
-    }
-
-    /**
-     * This is alert function show when permission is not enable in the app setting
-     */
-    fun alertBoxLocation(context: Context): AlertDialog {
-        val builder = AlertDialog.Builder(context)
-        builder.setTitle("Alert")
-        builder.setMessage(R.string.dialogMessage)
-        builder.setIcon(android.R.drawable.ic_dialog_alert)
-        builder.setPositiveButton("Yes") { _, _ ->
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            intent.data = Uri.fromParts("package", context.packageName, null)
-            ActivityCompat.startActivityForResult(context as Activity, intent, 200, null)
-        }
-        builder.setNeutralButton("Cancel") { _, _ -> }
-
-        val alertDialog: AlertDialog = builder.create()
-        alertDialog.setCancelable(false)
-        alertDialog.show()
-        return alertDialog
-    }
-
-    fun isLocationPermissionGranted(context: Context): Boolean {
+    fun isPermissionGranted(ctx: Context, permission: String): Boolean {
         return ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            ctx,
+            permission
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun calculateMD5HashEmail(email: String): String {
+    fun md5Hash(str: String): String {
         try {
             val digest = MessageDigest.getInstance("MD5")
-            digest.update(email.toByteArray())
+            digest.update(str.toByteArray())
             val messageDigest = digest.digest()
             val hexString = java.lang.StringBuilder()
             for (b in messageDigest) {
@@ -123,28 +60,9 @@ object Utils {
             }
             return hexString.toString()
         } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
+            logError(e.message ?: "")
+            return ""
         }
-        return ""
-    }
-
-    fun calculateSHA256Hash(phone: String): String {
-        try {
-            val digest: MessageDigest = MessageDigest.getInstance("SHA-256")
-            val hashBytes: ByteArray = digest.digest(phone.toByteArray(StandardCharsets.UTF_8))
-            val hexString = StringBuilder()
-            for (hashByte in hashBytes) {
-                val hex = Integer.toHexString(0xff and hashByte.toInt())
-                if (hex.length == 1) {
-                    hexString.append('0')
-                }
-                hexString.append(hex)
-            }
-            return hexString.toString()
-        } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
-        }
-        return ""
     }
 
     fun timePassedSince(time: Long): String {
@@ -156,24 +74,84 @@ object Utils {
         return "$hours:$minutes:$seconds"
     }
 
-    fun isGPSEnabled(context: Context): Boolean {
-        val locationManager =
-            context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-    }
-
-    fun isOnline(context: Context?): Boolean {
-        context ?: return false
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-        connectivityManager ?: return false
-        val activeNetwork = connectivityManager.activeNetwork ?: return false
-        val networkCapabilities =
-            connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
-        return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
-
     fun getCurrentUnixTimestamp(): String {
         return (System.currentTimeMillis() / 1000L).toString()
+    }
+
+    fun logError(msg: String) {
+        Log.e(SDK_LOG_TAG, msg);
+    }
+
+    fun logInfo(msg: String) {
+        Log.i(SDK_LOG_TAG, msg);
+    }
+
+    suspend fun getStaticData(ctx: Context, adTrakingParams: AdTrakingParams): AdTrakingParams {
+        adTrakingParams.device_type = getDeviceType(ctx)
+        adTrakingParams.device_os = getDeviceOS()
+        adTrakingParams.device_osv = getDeviceOSV()
+        adTrakingParams.device_brand = getDeviceBrand() ?: ""
+        adTrakingParams.device_model = getDeviceModel() ?: ""
+        adTrakingParams.device_model_hmv =
+            if (adTrakingParams.device_brand != "" && adTrakingParams.device_model_hmv != "") {
+                "${adTrakingParams.device_brand} ${adTrakingParams.device_model}"
+            } else ""
+
+        val location = TrackerGps.getLocation()
+
+        if (location != null) {
+            val (country, countryCode) = getCountry(ctx, location.latitude, location.longitude)
+            adTrakingParams.latitude = location.latitude.toString()
+            adTrakingParams.longitude = location.longitude.toString()
+            adTrakingParams.country = country
+            adTrakingParams.country_code = countryCode
+        }
+
+        adTrakingParams.maid = getMAID(ctx)
+        adTrakingParams.maid_id = getMaidType()
+        adTrakingParams.msisdn = getHashedMSISDN(ctx)
+        adTrakingParams.imei = getHashedIMEI(ctx)
+        if (adTrakingParams.imei == "") {
+            adTrakingParams.imei = getHashedAndroidID(ctx);
+        }
+        adTrakingParams.app_name = getAppName(ctx)
+        adTrakingParams.app_bundle = getAppBundleId(ctx)
+        adTrakingParams.cell_id = getCellId(ctx)
+        adTrakingParams.cell_lac = getCellLac(ctx)
+        adTrakingParams.cell_mnc = getMNC(ctx)
+        adTrakingParams.cell_mcc = getMCC(ctx)
+        return adTrakingParams
+    }
+
+    suspend fun getDynamicData(
+        ctx: Context,
+        startTime: Long,
+        adTrakingParams: AdTrakingParams
+    ): AdTrakingParams {
+        adTrakingParams.unix_timestamp = getCurrentUnixTimestamp()
+        adTrakingParams.connection_type = getConnectionType(ctx)
+        adTrakingParams.connection_provider = getConnectionProvider(ctx)
+        val location = TrackerGps.getLocation()
+        if (location != null) {
+            adTrakingParams.latitude = location.latitude.toString()
+            adTrakingParams.longitude = location.longitude.toString()
+            adTrakingParams.altitude = location.altitude.toString()
+            adTrakingParams.bearing = getBearingTo(ctx, location.latitude, location.longitude).toString()
+            adTrakingParams.location_type = location.provider ?: ""
+            adTrakingParams.speed = location.speed.toString()
+            adTrakingParams.horizontalAccuracy = location.accuracy.toString()
+            adTrakingParams.verticalAccuracyMeters = location.verticalAccuracyMeters.toString()
+        }
+
+        adTrakingParams.session_duration = timePassedSince(startTime)
+        adTrakingParams.language = getCurrentLocaleLanguage()
+        adTrakingParams.ipv4 = getIPV4Address()
+        adTrakingParams.ipv6 = getIPV6Address()
+        adTrakingParams.bssid = getBSSID(ctx)
+        adTrakingParams.ssid = getSSID(ctx)
+        adTrakingParams.keyboard_language = getKeyboardLanguage(ctx)
+        adTrakingParams.useragent = getUserAgent(ctx)
+
+        return adTrakingParams
     }
 }
