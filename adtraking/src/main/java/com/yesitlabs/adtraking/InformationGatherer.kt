@@ -29,6 +29,7 @@ import android.telephony.CellInfo
 import android.telephony.CellInfoLte
 import android.webkit.WebView
 import com.yesitlabs.adtraking.Utils.isPermissionGranted
+import com.yesitlabs.adtraking.Utils.logError
 import com.yesitlabs.adtraking.Utils.md5Hash
 import kotlinx.coroutines.tasks.await
 
@@ -183,11 +184,15 @@ object InformationGatherer {
 
     @SuppressLint("HardwareIds")
     fun getHashedIMEI(context: Context): String {
-        if(!isPermissionGranted(context, android.Manifest.permission.READ_PHONE_STATE)) return ""
-
-        val telephonyManager =
-            context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-        return md5Hash(telephonyManager.imei)
+        if (!isPermissionGranted(context, android.Manifest.permission.READ_PHONE_STATE)) return ""
+        try {
+            val telephonyManager =
+                context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+            return md5Hash(telephonyManager.imei)
+        } catch (e: Exception) {
+            logError("Exception: ${e.message}")
+            return ""
+        }
     }
 
     fun getBSSID(context: Context): String {
@@ -235,7 +240,12 @@ object InformationGatherer {
 
     @SuppressLint("HardwareIds")
     fun getHashedAndroidID(context: Context): String {
-        return md5Hash(Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID))
+        return md5Hash(
+            Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ANDROID_ID
+            )
+        )
     }
 
     suspend fun getMAID(applicationContext: Context): String {
@@ -261,11 +271,15 @@ object InformationGatherer {
     }
 
     fun getDeviceBrand(): String? {
-        return Build.MANUFACTURER
+        return Build.BRAND
     }
 
     fun getDeviceModel(): String? {
         return Build.MODEL
+    }
+
+    fun getDeviceHardware(): String? {
+        return Build.HARDWARE
     }
 
     fun getDeviceOS(): String {

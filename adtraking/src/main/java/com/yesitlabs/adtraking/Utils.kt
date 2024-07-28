@@ -15,6 +15,7 @@ import com.yesitlabs.adtraking.InformationGatherer.getConnectionType
 import com.yesitlabs.adtraking.InformationGatherer.getCountry
 import com.yesitlabs.adtraking.InformationGatherer.getCurrentLocaleLanguage
 import com.yesitlabs.adtraking.InformationGatherer.getDeviceBrand
+import com.yesitlabs.adtraking.InformationGatherer.getDeviceHardware
 import com.yesitlabs.adtraking.InformationGatherer.getDeviceModel
 import com.yesitlabs.adtraking.InformationGatherer.getDeviceOS
 import com.yesitlabs.adtraking.InformationGatherer.getDeviceOSV
@@ -92,11 +93,7 @@ object Utils {
         adTrakingParams.device_osv = getDeviceOSV()
         adTrakingParams.device_brand = getDeviceBrand() ?: ""
         adTrakingParams.device_model = getDeviceModel() ?: ""
-        adTrakingParams.device_model_hmv =
-            if (adTrakingParams.device_brand != "" && adTrakingParams.device_model_hmv != "") {
-                "${adTrakingParams.device_brand} ${adTrakingParams.device_model}"
-            } else ""
-
+        adTrakingParams.device_model_hmv = getDeviceHardware() ?: ""
         val location = TrackerGps.getLocation()
 
         if (location != null) {
