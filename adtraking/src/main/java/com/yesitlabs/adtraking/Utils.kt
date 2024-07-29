@@ -31,7 +31,6 @@ import com.yesitlabs.adtraking.InformationGatherer.getMCC
 import com.yesitlabs.adtraking.InformationGatherer.getMNC
 import com.yesitlabs.adtraking.InformationGatherer.getMaidType
 import com.yesitlabs.adtraking.InformationGatherer.getSSID
-import com.yesitlabs.adtraking.InformationGatherer.getUserAgent
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.Calendar
@@ -147,7 +146,6 @@ object Utils {
         adTrakingParams.bssid = getBSSID(ctx)
         adTrakingParams.ssid = getSSID(ctx)
         adTrakingParams.keyboard_language = getKeyboardLanguage(ctx)
-        adTrakingParams.useragent = getUserAgent(ctx)
 
         return adTrakingParams
     }

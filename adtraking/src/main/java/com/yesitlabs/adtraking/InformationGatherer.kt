@@ -303,12 +303,6 @@ object InformationGatherer {
         return ctx.resources.configuration.mcc.toString()
     }
 
-    suspend fun getUserAgent(context: Context): String = withContext(Dispatchers.Main) {
-        val webView = WebView(context)
-        val settings: WebSettings = webView.settings
-        settings.userAgentString
-    }
-
     @SuppressLint("MissingPermission")
     fun getCellLac(ctx: Context): String {
         if (!isPermissionGranted(ctx, android.Manifest.permission.ACCESS_COARSE_LOCATION)) {
