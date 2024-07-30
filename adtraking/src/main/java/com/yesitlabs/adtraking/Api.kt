@@ -12,6 +12,7 @@ data class AdTrakingResponse(
 )
 
 data class AdTrakingParams(
+    var device_id: String = "",
     var license_key: String = "",
     var latitude: String = "",
     var longitude: String = "",
@@ -33,6 +34,7 @@ data class AdTrakingParams(
     var location_type: String = "",
     var session_duration: String = "",
     var language: String = "",
+    var useragent: String = "",
     var maid: String = "",
     var maid_id: String = "",
     var device_model_hmv: String = "",

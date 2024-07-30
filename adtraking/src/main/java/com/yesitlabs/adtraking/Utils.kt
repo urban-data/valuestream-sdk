@@ -31,6 +31,7 @@ import com.yesitlabs.adtraking.InformationGatherer.getMCC
 import com.yesitlabs.adtraking.InformationGatherer.getMNC
 import com.yesitlabs.adtraking.InformationGatherer.getMaidType
 import com.yesitlabs.adtraking.InformationGatherer.getSSID
+import com.yesitlabs.adtraking.InformationGatherer.getUserAgent
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.Calendar
@@ -87,6 +88,7 @@ object Utils {
     }
 
     suspend fun getStaticData(ctx: Context, adTrakingParams: AdTrakingParams): AdTrakingParams {
+        adTrakingParams.device_id = getHashedAndroidID(ctx)
         adTrakingParams.device_type = getDeviceType(ctx)
         adTrakingParams.device_os = getDeviceOS()
         adTrakingParams.device_osv = getDeviceOSV()
@@ -107,9 +109,6 @@ object Utils {
         adTrakingParams.maid_id = getMaidType()
         adTrakingParams.msisdn = getHashedMSISDN(ctx)
         adTrakingParams.imei = getHashedIMEI(ctx)
-        if (adTrakingParams.imei == "") {
-            adTrakingParams.imei = getHashedAndroidID(ctx);
-        }
         adTrakingParams.app_name = getAppName(ctx)
         adTrakingParams.app_bundle = getAppBundleId(ctx)
         adTrakingParams.cell_id = getCellId(ctx)
@@ -141,6 +140,7 @@ object Utils {
 
         adTrakingParams.session_duration = timePassedSince(startTime)
         adTrakingParams.language = getCurrentLocaleLanguage()
+        adTrakingParams.useragent = getUserAgent(ctx)
         adTrakingParams.ipv4 = getIPV4Address()
         adTrakingParams.ipv6 = getIPV6Address()
         adTrakingParams.bssid = getBSSID(ctx)

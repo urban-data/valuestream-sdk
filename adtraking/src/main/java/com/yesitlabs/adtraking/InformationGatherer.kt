@@ -362,4 +362,10 @@ object InformationGatherer {
 
         return ""
     }
+
+    suspend fun getUserAgent(context: Context): String = withContext(Dispatchers.Main) {
+        val webView = WebView(context)
+        val settings: WebSettings = webView.settings
+        settings.userAgentString
+    }
 }
