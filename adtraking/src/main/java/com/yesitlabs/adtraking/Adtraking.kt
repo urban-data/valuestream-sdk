@@ -1,11 +1,11 @@
-package com.yesitlabs.adtraking
+package com.urbandata.pixelsdk
 
 import android.content.Context
-import com.yesitlabs.adtraking.Utils.getDynamicData
-import com.yesitlabs.adtraking.Utils.getStaticData
-import com.yesitlabs.adtraking.Utils.logError
-import com.yesitlabs.adtraking.Utils.logInfo
-import com.yesitlabs.adtraking.Utils.md5Hash
+import com.urbandata.pixelsdk.Utils.getDynamicData
+import com.urbandata.pixelsdk.Utils.getStaticData
+import com.urbandata.pixelsdk.Utils.logError
+import com.urbandata.pixelsdk.Utils.logInfo
+import com.urbandata.pixelsdk.Utils.md5Hash
 import kotlinx.coroutines.*
 import retrofit2.Call
 import retrofit2.Response

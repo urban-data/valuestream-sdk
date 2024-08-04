@@ -15,6 +15,6 @@ dependencyResolutionManagement {
         maven { url "https://jitpack.io" }
     }
 }
-rootProject.name = "Adtraking"
+rootProject.name = "Pixel SDK"
 include ':app'
-include ':adtraking'
+include ':pixelsdk'

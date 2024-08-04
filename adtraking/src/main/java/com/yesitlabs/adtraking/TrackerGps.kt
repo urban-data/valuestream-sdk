@@ -1,11 +1,11 @@
-package com.yesitlabs.adtraking
+package com.urbandata.pixelsdk
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.location.LocationManager
-import com.yesitlabs.adtraking.Utils.isPermissionGranted
-import com.yesitlabs.adtraking.Utils.logError
+import com.urbandata.pixelsdk.Utils.isPermissionGranted
+import com.urbandata.pixelsdk.Utils.logError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext

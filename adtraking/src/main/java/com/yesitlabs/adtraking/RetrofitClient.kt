@@ -1,4 +1,4 @@
-package com.yesitlabs.adtraking
+package com.urbandata.pixelsdk
 
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient

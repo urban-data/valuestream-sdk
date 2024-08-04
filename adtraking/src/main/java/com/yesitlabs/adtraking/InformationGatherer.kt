@@ -1,4 +1,4 @@
-package com.yesitlabs.adtraking
+package com.urbandata.pixelsdk
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -28,9 +28,9 @@ import android.location.Location
 import android.telephony.CellInfo
 import android.telephony.CellInfoLte
 import android.webkit.WebView
-import com.yesitlabs.adtraking.Utils.isPermissionGranted
-import com.yesitlabs.adtraking.Utils.logError
-import com.yesitlabs.adtraking.Utils.md5Hash
+import com.urbandata.pixelsdk.Utils.isPermissionGranted
+import com.urbandata.pixelsdk.Utils.logError
+import com.urbandata.pixelsdk.Utils.md5Hash
 import kotlinx.coroutines.tasks.await
 
 object InformationGatherer {
