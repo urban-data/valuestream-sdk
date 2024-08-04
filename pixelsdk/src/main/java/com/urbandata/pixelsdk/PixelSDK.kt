@@ -14,8 +14,8 @@ import java.util.*
 import kotlin.properties.Delegates
 
 // maybe make this a non-singleton later if need be
-object AdTraking {
-    private var adTrakingParams: AdTrakingParams = AdTrakingParams()
+object PixelSDK {
+    private var pixelSDKParams: PixelSDKParams = PixelSDKParams()
     private var startTime by Delegates.notNull<Long>()
     private lateinit var contextRef: WeakReference<Context>
     private var sendDataJob: Job? = null
@@ -29,12 +29,12 @@ object AdTraking {
     // can be called more than once, no bug will occur, it will just re-initialize
     fun initialize(ctx: Context, licenseKey: String, intervalMinutes: Long) {
         contextRef = WeakReference(ctx)
-        adTrakingParams.license_key = licenseKey
+        pixelSDKParams.license_key = licenseKey
         startTime = Calendar.getInstance().time.time
         TrackerGps.initialize(ctx)
 
         coroutineScope.launch {
-            adTrakingParams = getStaticData(ctx, adTrakingParams)
+            pixelSDKParams = getStaticData(ctx, pixelSDKParams)
 
             startSendDataTask(intervalMinutes)
         }
@@ -51,9 +51,9 @@ object AdTraking {
     }
 
     fun setUserDetails(email: String, yod: String, gender: String) {
-        adTrakingParams.hem = md5Hash(email)
-        adTrakingParams.yob = yod
-        adTrakingParams.gender = gender
+        pixelSDKParams.hem = md5Hash(email)
+        pixelSDKParams.yob = yod
+        pixelSDKParams.gender = gender
     }
 
     private fun getContext(): Context? {
@@ -75,14 +75,14 @@ object AdTraking {
                 return@launch
             }
 
-            adTrakingParams = getDynamicData(ctx, startTime, adTrakingParams)
-            val call: Call<AdTrakingResponse> =
-                retrofitClient.create(Api::class.java).addData(mapAdTrakingParams(adTrakingParams))
+            pixelSDKParams = getDynamicData(ctx, startTime, pixelSDKParams)
+            val call: Call<PixelSDKResponse> =
+                retrofitClient.create(Api::class.java).addData(mapPixelSDKParams(pixelSDKParams))
 
-            call.enqueue(object : retrofit2.Callback<AdTrakingResponse> {
+            call.enqueue(object : retrofit2.Callback<PixelSDKResponse> {
                 override fun onResponse(
-                    call: Call<AdTrakingResponse>,
-                    response: Response<AdTrakingResponse>
+                    call: Call<PixelSDKResponse>,
+                    response: Response<PixelSDKResponse>
                 ) {
                     try {
                         val responseBody = response.body()
@@ -96,7 +96,7 @@ object AdTraking {
                     }
                 }
 
-                override fun onFailure(call: Call<AdTrakingResponse>, t: Throwable) {
+                override fun onFailure(call: Call<PixelSDKResponse>, t: Throwable) {
                     logError("An error occurred. " + (t.message ?: ""));
                 }
             })

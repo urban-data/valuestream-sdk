@@ -5,13 +5,13 @@ import retrofit2.http.FieldMap
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.POST
 
-data class AdTrakingResponse(
+data class PixelSDKResponse(
     var license_key: String,
     var message: String,
     var success: Boolean
 )
 
-data class AdTrakingParams(
+data class PixelSDKParams(
     var device_id: String = "",
     var license_key: String = "",
     var latitude: String = "",
@@ -56,7 +56,7 @@ data class AdTrakingParams(
     var cell_mcc: String = ""
 )
 
-fun mapAdTrakingParams(params: AdTrakingParams): Map<String, String?> {
+fun mapPixelSDKParams(params: PixelSDKParams): Map<String, String?> {
     return mapOf(
         "lk" to params.license_key,
         "ts" to params.unix_timestamp,
@@ -107,5 +107,5 @@ interface Api {
     @POST("api/data")
     fun addData(
         @FieldMap params: Map<String, String?>
-    ): Call<AdTrakingResponse>
+    ): Call<PixelSDKResponse>
 }

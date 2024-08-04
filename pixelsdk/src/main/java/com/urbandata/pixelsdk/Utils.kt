@@ -37,7 +37,7 @@ import java.security.NoSuchAlgorithmException
 import java.util.Calendar
 
 object Utils {
-    var SDK_LOG_TAG: String = "AdTraking"
+    var SDK_LOG_TAG: String = "PixelSDK"
 
     fun isPermissionGranted(ctx: Context, permission: String): Boolean {
         return ContextCompat.checkSelfPermission(
@@ -87,66 +87,66 @@ object Utils {
         Log.i(SDK_LOG_TAG, msg);
     }
 
-    suspend fun getStaticData(ctx: Context, adTrakingParams: AdTrakingParams): AdTrakingParams {
-        adTrakingParams.device_id = getHashedAndroidID(ctx)
-        adTrakingParams.device_type = getDeviceType(ctx)
-        adTrakingParams.device_os = getDeviceOS()
-        adTrakingParams.device_osv = getDeviceOSV()
-        adTrakingParams.device_brand = getDeviceBrand() ?: ""
-        adTrakingParams.device_model = getDeviceModel() ?: ""
-        adTrakingParams.device_model_hmv = getDeviceHardware() ?: ""
+    suspend fun getStaticData(ctx: Context, pixelSDKParams: PixelSDKParams): PixelSDKParams {
+        pixelSDKParams.device_id = getHashedAndroidID(ctx)
+        pixelSDKParams.device_type = getDeviceType(ctx)
+        pixelSDKParams.device_os = getDeviceOS()
+        pixelSDKParams.device_osv = getDeviceOSV()
+        pixelSDKParams.device_brand = getDeviceBrand() ?: ""
+        pixelSDKParams.device_model = getDeviceModel() ?: ""
+        pixelSDKParams.device_model_hmv = getDeviceHardware() ?: ""
         val location = TrackerGps.getLocation()
 
         if (location != null) {
             val (country, countryCode) = getCountry(ctx, location.latitude, location.longitude)
-            adTrakingParams.latitude = location.latitude.toString()
-            adTrakingParams.longitude = location.longitude.toString()
-            adTrakingParams.country = country
-            adTrakingParams.country_code = countryCode
+            pixelSDKParams.latitude = location.latitude.toString()
+            pixelSDKParams.longitude = location.longitude.toString()
+            pixelSDKParams.country = country
+            pixelSDKParams.country_code = countryCode
         }
 
-        adTrakingParams.maid = getMAID(ctx)
-        adTrakingParams.maid_id = getMaidType()
-        adTrakingParams.msisdn = getHashedMSISDN(ctx)
-        adTrakingParams.imei = getHashedIMEI(ctx)
-        adTrakingParams.app_name = getAppName(ctx)
-        adTrakingParams.app_bundle = getAppBundleId(ctx)
-        adTrakingParams.cell_id = getCellId(ctx)
-        adTrakingParams.cell_lac = getCellLac(ctx)
-        adTrakingParams.cell_mnc = getMNC(ctx)
-        adTrakingParams.cell_mcc = getMCC(ctx)
-        return adTrakingParams
+        pixelSDKParams.maid = getMAID(ctx)
+        pixelSDKParams.maid_id = getMaidType()
+        pixelSDKParams.msisdn = getHashedMSISDN(ctx)
+        pixelSDKParams.imei = getHashedIMEI(ctx)
+        pixelSDKParams.app_name = getAppName(ctx)
+        pixelSDKParams.app_bundle = getAppBundleId(ctx)
+        pixelSDKParams.cell_id = getCellId(ctx)
+        pixelSDKParams.cell_lac = getCellLac(ctx)
+        pixelSDKParams.cell_mnc = getMNC(ctx)
+        pixelSDKParams.cell_mcc = getMCC(ctx)
+        return pixelSDKParams
     }
 
     suspend fun getDynamicData(
         ctx: Context,
         startTime: Long,
-        adTrakingParams: AdTrakingParams
-    ): AdTrakingParams {
-        adTrakingParams.unix_timestamp = getCurrentUnixTimestamp()
-        adTrakingParams.connection_type = getConnectionType(ctx)
-        adTrakingParams.connection_provider = getConnectionProvider(ctx)
+        pixelSDKParams: PixelSDKParams
+    ): PixelSDKParams {
+        pixelSDKParams.unix_timestamp = getCurrentUnixTimestamp()
+        pixelSDKParams.connection_type = getConnectionType(ctx)
+        pixelSDKParams.connection_provider = getConnectionProvider(ctx)
         val location = TrackerGps.getLocation()
         if (location != null) {
-            adTrakingParams.latitude = location.latitude.toString()
-            adTrakingParams.longitude = location.longitude.toString()
-            adTrakingParams.altitude = location.altitude.toString()
-            adTrakingParams.bearing = getBearingTo(ctx, location.latitude, location.longitude).toString()
-            adTrakingParams.location_type = location.provider ?: ""
-            adTrakingParams.speed = location.speed.toString()
-            adTrakingParams.horizontalAccuracy = location.accuracy.toString()
-            adTrakingParams.verticalAccuracyMeters = location.verticalAccuracyMeters.toString()
+            pixelSDKParams.latitude = location.latitude.toString()
+            pixelSDKParams.longitude = location.longitude.toString()
+            pixelSDKParams.altitude = location.altitude.toString()
+            pixelSDKParams.bearing = getBearingTo(ctx, location.latitude, location.longitude).toString()
+            pixelSDKParams.location_type = location.provider ?: ""
+            pixelSDKParams.speed = location.speed.toString()
+            pixelSDKParams.horizontalAccuracy = location.accuracy.toString()
+            pixelSDKParams.verticalAccuracyMeters = location.verticalAccuracyMeters.toString()
         }
 
-        adTrakingParams.session_duration = timePassedSince(startTime)
-        adTrakingParams.language = getCurrentLocaleLanguage()
-        adTrakingParams.useragent = getUserAgent(ctx)
-        adTrakingParams.ipv4 = getIPV4Address()
-        adTrakingParams.ipv6 = getIPV6Address()
-        adTrakingParams.bssid = getBSSID(ctx)
-        adTrakingParams.ssid = getSSID(ctx)
-        adTrakingParams.keyboard_language = getKeyboardLanguage(ctx)
+        pixelSDKParams.session_duration = timePassedSince(startTime)
+        pixelSDKParams.language = getCurrentLocaleLanguage()
+        pixelSDKParams.useragent = getUserAgent(ctx)
+        pixelSDKParams.ipv4 = getIPV4Address()
+        pixelSDKParams.ipv6 = getIPV6Address()
+        pixelSDKParams.bssid = getBSSID(ctx)
+        pixelSDKParams.ssid = getSSID(ctx)
+        pixelSDKParams.keyboard_language = getKeyboardLanguage(ctx)
 
-        return adTrakingParams
+        return pixelSDKParams
     }
 }

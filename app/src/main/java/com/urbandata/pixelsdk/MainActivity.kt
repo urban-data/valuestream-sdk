@@ -39,8 +39,8 @@ class MainActivity : AppCompatActivity() {
         val yearOfBirth = "1990"
         val email = "example@example.com"
 
-        // AdTraking.setUserDetails(email, yearOfBirth, gender)
-        // AdTraking.initialize(this, licenseKey, 1)
+        // PixelSDK.setUserDetails(email, yearOfBirth, gender)
+        // PixelSDK.initialize(this, licenseKey, 1)
 
         runOnUiThread {
             Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show()
