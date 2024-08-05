@@ -80,7 +80,7 @@ object Utils {
     }
 
     fun logError(msg: String) {
-        Log.e(SDK_LOG_TAG, msg);
+        Log.w(SDK_LOG_TAG, msg);
     }
 
     fun logInfo(msg: String) {

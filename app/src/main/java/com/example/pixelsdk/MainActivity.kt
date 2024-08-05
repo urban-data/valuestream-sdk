@@ -1,21 +1,24 @@
-package com.urbandata.pixelsdk
+package com.example.app
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.urbandata.pixelsdk.PixelSDK
 
 class MainActivity : AppCompatActivity() {
-
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val allPermissionsGranted = permissions.values.all { it }
             if (allPermissionsGranted) {
-                initializeAdTracking()
+                initializePixelSDK()
             } else {
-                Toast.makeText(this, "Permissions required for app functionality", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Permissions required for app functionality",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
@@ -33,14 +36,14 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun initializeAdTracking() {
+    private fun initializePixelSDK() {
         val licenseKey = "07nYbS65pi4b0jUV"
         val gender = "male"
         val yearOfBirth = "1990"
         val email = "example@example.com"
 
-        // PixelSDK.setUserDetails(email, yearOfBirth, gender)
-        // PixelSDK.initialize(this, licenseKey, 1)
+        PixelSDK.setUserDetails(email, yearOfBirth, gender)
+        PixelSDK.initialize(this, licenseKey, 1)
 
         runOnUiThread {
             Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show()

@@ -1,14 +1,15 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'maven-publish'
 }
 
 android {
-    namespace 'app'
+    namespace 'com.example.app'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.app"
+        applicationId "com.example.app"
         minSdk 26
         targetSdk 33
         versionCode 1
@@ -23,12 +24,33 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+}
+
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties")))  
+
+repositories {
+    google()
+    mavenCentral()
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/urban-data/sdk-android")
+        credentials {
+            username = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
+            password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
+        }
+        metadataSources {
+            mavenPom()
+            artifact()
+        }
     }
 }
 
@@ -42,9 +64,14 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.7.0"))
-    def multidex_version = "2.0.1"
-    implementation "androidx.multidex:multidex:$multidex_version"
+    //Retrofit Lib.
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.10'
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.10'
 
-    
+    implementation platform("org.jetbrains.kotlin:kotlin-bom:1.7.0")
+    implementation "androidx.multidex:multidex:2.0.1"
+
+    implementation "com.urbandata.pixelsdk:pixelsdk:1.0.4"
 }
