@@ -43,7 +43,7 @@ android {
 def githubProperties = new Properties()
 githubProperties.load(new FileInputStream(rootProject.file("github.properties")))  
 def getVersionName = { ->
-    return "1.1.0"
+    return "1.1.2"
 }
 def getArtificatId = { ->
     return "pixelsdk"
