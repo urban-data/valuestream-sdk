@@ -35,6 +35,7 @@ import com.urbandata.pixelsdk.InformationGatherer.getUserAgent
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.Calendar
+import java.util.Locale
 
 object Utils {
     var SDK_LOG_TAG: String = "PixelSDK"
@@ -67,12 +68,9 @@ object Utils {
     }
 
     fun timePassedSince(time: Long): String {
-        val currentTime = Calendar.getInstance().time.time
-        val diff = currentTime - time
-        val seconds = diff / 1000
-        val minutes = seconds / 60
-        val hours = minutes / 60
-        return "$hours:$minutes:$seconds"
+        val currentTime = System.currentTimeMillis()
+        val secondsPassed = (currentTime - time) / 1000
+        return secondsPassed.toString()
     }
 
     fun getCurrentUnixTimestamp(): String {

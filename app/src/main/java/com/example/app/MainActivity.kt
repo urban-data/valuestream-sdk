@@ -38,12 +38,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializePixelSDK() {
         val licenseKey = "07nYbS65pi4b0jUV"
+        val intervalInMinutes : Long = 1
         val gender = "male"
         val yearOfBirth = "1990"
         val email = "example@example.com"
 
         PixelSDK.setUserDetails(email, yearOfBirth, gender)
-        PixelSDK.initialize(this, licenseKey, 1)
+        PixelSDK.initialize(this, licenseKey, intervalInMinutes)
 
         runOnUiThread {
             Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show()
