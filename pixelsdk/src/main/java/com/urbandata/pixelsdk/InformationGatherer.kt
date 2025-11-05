@@ -157,31 +157,6 @@ object InformationGatherer {
         }
     }
 
-    @SuppressLint("MissingPermission")
-    suspend fun getBearingTo(context: Context, targetLat: Double, targetLon: Double): Float? {
-        val fusedLocationClient: FusedLocationProviderClient =
-            LocationServices.getFusedLocationProviderClient(context)
-
-        if (isPermissionGranted(context, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-            && isPermissionGranted(context, android.Manifest.permission.ACCESS_FINE_LOCATION)
-        ) {
-            return null
-        }
-
-        val currentLocation = fusedLocationClient.lastLocation.await()
-
-        if (currentLocation != null) {
-            val targetLocation = Location("").apply {
-                latitude = targetLat
-                longitude = targetLon
-            }
-
-            return currentLocation.bearingTo(targetLocation)
-        }
-        return null
-    }
-
-
     @SuppressLint("HardwareIds")
     fun getHashedIMEI(context: Context): String {
         if (!isPermissionGranted(context, android.Manifest.permission.READ_PHONE_STATE)) return ""

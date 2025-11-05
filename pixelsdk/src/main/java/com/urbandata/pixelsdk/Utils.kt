@@ -7,7 +7,6 @@ import android.util.Log
 import com.urbandata.pixelsdk.InformationGatherer.getAppBundleId
 import com.urbandata.pixelsdk.InformationGatherer.getAppName
 import com.urbandata.pixelsdk.InformationGatherer.getBSSID
-import com.urbandata.pixelsdk.InformationGatherer.getBearingTo
 import com.urbandata.pixelsdk.InformationGatherer.getCellId
 import com.urbandata.pixelsdk.InformationGatherer.getCellLac
 import com.urbandata.pixelsdk.InformationGatherer.getConnectionProvider
@@ -129,7 +128,6 @@ object Utils {
             pixelSDKParams.latitude = location.latitude.toString()
             pixelSDKParams.longitude = location.longitude.toString()
             pixelSDKParams.altitude = location.altitude.toString()
-            pixelSDKParams.bearing = getBearingTo(ctx, location.latitude, location.longitude).toString()
             pixelSDKParams.location_type = location.provider ?: ""
             pixelSDKParams.speed = location.speed.toString()
             pixelSDKParams.horizontalAccuracy = location.accuracy.toString()
