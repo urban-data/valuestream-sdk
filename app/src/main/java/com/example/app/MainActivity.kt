@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializePixelSDK() {
-        val licenseKey = "07nYbS65pi4b0jUV"
+        val licenseKey = "b633-eb76-e5ae-4eef"
         val intervalInMinutes : Long = 1
         val gender = "male"
         val yearOfBirth = "1990"

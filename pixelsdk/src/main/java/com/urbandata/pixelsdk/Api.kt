@@ -102,7 +102,7 @@ fun mapPixelSDKParams(params: PixelSDKParams): Map<String, String?> {
 
 interface Api {
     @FormUrlEncoded
-    @POST("api/data")
+    @POST("api/mobile_data")
     fun addData(
         @FieldMap params: Map<String, String?>
     ): Call<PixelSDKResponse>
