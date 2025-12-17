@@ -45,7 +45,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.10.0'
     // implementation project(':pixelsdk')
 
-    implementation 'com.github.urban-data:valuestream-sdk:1.2.0'
+    implementation 'com.github.urban-data:valuestream-sdk:1.2.2'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'

@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-26T19:58:51.647200766Z">
+        <DropdownSelection timestamp="2025-12-17T10:31:06.289611863Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=/home/silidrone/.android/avd/Pixel_3a_API_36.avd" />

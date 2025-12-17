@@ -1,79 +1,36 @@
-# PixelSDK for Android - Integration Guide
+# ValueStream SDK for Android - Integration Guide
 
 ## Prerequisites
 
-To integrate our SDK, you will need two things from us:
-
-* **A Github Token** to access our Maven package repository
-* **A license key** for SDK authentication with our backend
-
+To integrate our SDK, you will need a **license key** for SDK authentication with our backend.
 
 ## Setup & Installation
 
-### Step 1: Configure GitHub Package Authentication
+### Step 1: Add JitPack Repository
 
-Create a `github.properties` file in your project root directory with the following contents:
-
-```properties
-gpr.usr=urbandata
-gpr.key=YOUR_GITHUB_TOKEN_HERE
-```
-
-**Important:** Add `github.properties` to your `.gitignore` file to prevent committing credentials to version control.
-
-### Step 2: Add Maven Repository
-
-In your **module-level build.gradle**, add the following at the top:
+In your **settings.gradle**, add JitPack to repositories:
 
 ```groovy
-def githubProperties = new Properties()
-githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
-```
-
-Then add the repositories block:
-
-```groovy
-repositories {
-    google()
-    mavenCentral()
-    maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/urban-data/sdk-android")
-        credentials {
-            username = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
-            password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
-        }
-        metadataSources {
-            mavenPom()
-            artifact()
-        }
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 ```
 
-### Step 3: Add Dependencies
+### Step 2: Add Dependency
 
-In your dependencies block, add:
+In your **module-level build.gradle**:
 
 ```groovy
-// PixelSDK
-implementation "com.urbandata.pixelsdk:pixelsdk:1.1.2"
-
-// Required Dependencies
-implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
-implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
-implementation 'androidx.lifecycle:lifecycle-process:2.4.0'
-implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.0'
-implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.10'
-implementation 'com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.10'
-implementation 'com.google.android.gms:play-services-location:17.0.0'
-implementation 'com.google.android.gms:play-services-ads-identifier:18.0.1'
+dependencies {
+    implementation 'com.github.urban-data:valuestream-sdk:1.2.2'
+}
 ```
 
-**Note:** The SDK version (currently `1.1.2`) may change with newer releases. Check with us for the latest version.
+That's it! Sync Gradle and you're ready to go.
 
 ---
 
@@ -186,16 +143,6 @@ Requires: `READ_PHONE_STATE` + `READ_SMS` + `READ_PHONE_NUMBERS`
 | `msisdn` | MD5 hashed phone number |
 
 
-### Permission Request Best Practices
-
-We recommend requesting only the permissions you need:
-
-1. **Minimum Required:** Internet access (automatically granted)
-2. **Recommended:** Location permissions (for geographic insights)
-3. **Optional:** Phone state (for device identification)
-
-## SDK Initialization
-
 ### Where to Initialize
 
 Initialize the SDK **once** in your `Application` class's `onCreate()` method. This ensures the SDK starts when your app launches.
@@ -237,18 +184,6 @@ public class MyApplication extends Application {
         PixelSDK.INSTANCE.initialize(this, licenseKey, intervalInMinutes);
     }
 }
-```
-
-### Register Your Application Class
-
-In your `AndroidManifest.xml`, register the Application class:
-
-```xml
-<application
-    android:name=".MyApplication"
-    ...>
-    <!-- Your activities and other components -->
-</application>
 ```
 
 ### Secure License Key Management
