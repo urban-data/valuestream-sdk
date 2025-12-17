@@ -34,24 +34,10 @@ android {
     }
 }
 
-def githubProperties = new Properties()
-githubProperties.load(new FileInputStream(rootProject.file("github.properties")))  
-
 repositories {
     google()
     mavenCentral()
-    maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/urban-data/sdk-android")
-        credentials {
-            username = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
-            password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
-        }
-        metadataSources {
-            mavenPom()
-            artifact()
-        }
-    }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -59,7 +45,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.10.0'
     // implementation project(':pixelsdk')
 
-    implementation "com.urbandata.pixelsdk:pixelsdk:1.2.0"
+    implementation 'com.github.urban-data:valuestream-sdk:1.2.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
