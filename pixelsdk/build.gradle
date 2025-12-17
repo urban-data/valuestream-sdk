@@ -40,32 +40,21 @@ android {
     }
 }
 
-def githubProperties = new Properties()
-githubProperties.load(new FileInputStream(rootProject.file("github.properties")))  
 def getVersionName = { ->
     return "1.2.0"
 }
 def getArtificatId = { ->
     return "pixelsdk"
 }
-publishing {
-    publications {
-        bar(MavenPublication) {
-            groupId 'com.urbandata.pixelsdk'
-            artifactId getArtificatId()
-            version getVersionName()
-            artifact("$buildDir/outputs/aar/${getArtificatId()}-release.aar")
-        }
-    }
 
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/urban-data/sdk-android")
-
-            credentials {
-                username = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
-                password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId 'com.github.urban-data'
+                artifactId 'valuestream-sdk'
+                version getVersionName()
             }
         }
     }
