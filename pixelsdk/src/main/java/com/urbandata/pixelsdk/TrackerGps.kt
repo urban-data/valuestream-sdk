@@ -6,6 +6,7 @@ import android.location.Location
 import android.location.LocationManager
 import com.urbandata.pixelsdk.Utils.isPermissionGranted
 import com.urbandata.pixelsdk.Utils.logError
+import com.urbandata.pixelsdk.Utils.logInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -27,9 +28,11 @@ object TrackerGps {
     // Suppressing MissingPermission as Android Studio doesn't understand I actually do check for permissions
     @SuppressLint("MissingPermission")
     suspend fun getLocation(): Location? = withContext(Dispatchers.Main) {
+        logInfo("TrackerGps.getLocation: start")
         suspendCancellableCoroutine { continuation ->
             val ctx = contextRef.get()
             if (ctx == null) {
+                logInfo("TrackerGps.getLocation: context is null")
                 continuation.resume(null)
                 return@suspendCancellableCoroutine
             }
@@ -45,6 +48,7 @@ object TrackerGps {
             val noProviders = (!hasGps && !hasNetwork)
             val invalidPermissionProviderCase = (!hasNetwork && !isFineLocationEnabled)
 
+            logInfo("TrackerGps.getLocation: hasGps=$hasGps, hasNetwork=$hasNetwork, fine=$isFineLocationEnabled, coarse=$isCoarseLocationEnabled")
             if (noPermissions || noProviders || invalidPermissionProviderCase) {
                 if (noPermissions) {
                     logError("Neither ACCESS_COARSE_LOCATION nor ACCESS_FINE_LOCATION permissions were provided!")
@@ -61,11 +65,13 @@ object TrackerGps {
 
             val locationListener = object : android.location.LocationListener {
                 override fun onLocationChanged(location: Location) {
+                    logInfo("TrackerGps.getLocation: received location")
                     continuation.resume(getBetterLocation(currentLocation, location))
                     currentLocation = location;
                     locationManager.removeUpdates(this)
                 }
             }
+            logInfo("TrackerGps.getLocation: requesting location updates")
 
             if (hasGps && isFineLocationEnabled) {
                 locationManager.requestLocationUpdates(

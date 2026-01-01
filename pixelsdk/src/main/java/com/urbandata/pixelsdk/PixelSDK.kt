@@ -4,8 +4,7 @@ import android.content.Context
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.urbandata.pixelsdk.Utils.getDynamicData
-import com.urbandata.pixelsdk.Utils.getStaticData
+import com.urbandata.pixelsdk.Utils.collectData
 import com.urbandata.pixelsdk.Utils.logError
 import com.urbandata.pixelsdk.Utils.logInfo
 import com.urbandata.pixelsdk.Utils.md5Hash
@@ -16,13 +15,40 @@ import java.lang.ref.WeakReference
 import java.util.*
 import kotlin.properties.Delegates
 
-// maybe make this a non-singleton later if need be
 object PixelSDK {
     private var pixelSDKParams: PixelSDKParams = PixelSDKParams()
     private var startTime by Delegates.notNull<Long>()
     private lateinit var contextRef: WeakReference<Context>
     private var sendDataJob: Job? = null
     private var _intervalMinutes : Long = 5L
+
+    private val ALLOWED_COUNTRIES = setOf(
+        // Middle East
+        "AE", // UAE
+        "BH", // Bahrain
+        "EG", // Egypt
+        "IQ", // Iraq
+        "IR", // Iran
+        "IL", // Israel
+        "JO", // Jordan
+        "KW", // Kuwait
+        "LB", // Lebanon
+        "OM", // Oman
+        "PS", // Palestine
+        "QA", // Qatar
+        "SA", // Saudi Arabia
+        "SY", // Syria
+        "TR", // Turkey
+        "YE", // Yemen
+        // North Africa
+        "DZ", // Algeria
+        "LY", // Libya
+        "MA", // Morocco
+        "MR", // Mauritania
+        "SD", // Sudan
+        "SS", // South Sudan
+        "TN"  // Tunisia
+    )
 
     private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
         logError("Coroutine exception: ${exception.localizedMessage}")
@@ -31,27 +57,29 @@ object PixelSDK {
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + exceptionHandler)
 
     fun initialize(ctx: Context, licenseKey: String, intervalMinutes: Long) {
+        logInfo("initialize: start")
         contextRef = WeakReference(ctx)
         pixelSDKParams.license_key = licenseKey
         _intervalMinutes = intervalMinutes
+        startTime = Calendar.getInstance().time.time
         TrackerGps.initialize(ctx)
-
-        coroutineScope.launch {
-            pixelSDKParams = getStaticData(ctx, pixelSDKParams)
-        }
-
         ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifecycleObserver())
+        logInfo("initialize: end")
     }
 
     private fun startSendingData() {
+        logInfo("startSendingData: start")
         startTime = Calendar.getInstance().time.time
         stopSendingData() // stop existing tasks
         sendDataJob = coroutineScope.launch {
             while (isActive) {
+                logInfo("startSendingData: loop iteration, calling sendData")
                 sendData()
+                logInfo("startSendingData: sendData done, delaying ${_intervalMinutes} min")
                 delay(_intervalMinutes * 60 * 1000) // Delay for the specified interval in minutes
             }
         }
+        logInfo("startSendingData: end")
     }
 
     fun stopSendingData() {
@@ -74,6 +102,7 @@ object PixelSDK {
     }
 
     private suspend fun sendData() {
+        logInfo("sendData: start")
         val ctx = getContext() ?: return
 
         val retrofitClient = RetrofitClient.getClient()
@@ -82,9 +111,21 @@ object PixelSDK {
             return
         }
 
-        pixelSDKParams = getDynamicData(ctx, startTime, pixelSDKParams)
+        logInfo("sendData: calling collectData")
+        pixelSDKParams = collectData(ctx, startTime, pixelSDKParams)
+        logInfo("sendData: collectData done")
+
+        val countryCode = pixelSDKParams.country_code
+        if (countryCode !in ALLOWED_COUNTRIES) {
+            logInfo("sendData: country '$countryCode' not in allowed list, skipping")
+            return
+        }
+
+        logInfo("sendData: sending request")
+        val requestBody = mapPixelSDKParams(pixelSDKParams)
+        logInfo("sendData: request body = $requestBody")
         val call: Call<PixelSDKResponse> =
-            retrofitClient.create(Api::class.java).addData(mapPixelSDKParams(pixelSDKParams))
+            retrofitClient.create(Api::class.java).addData(requestBody)
 
         call.enqueue(object : retrofit2.Callback<PixelSDKResponse> {
             override fun onResponse(
@@ -112,12 +153,12 @@ object PixelSDK {
 
     private class AppLifecycleObserver : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
-            // App has come to the foreground
+            logInfo("AppLifecycleObserver: onStart (app to foreground)")
             startSendingData();
         }
 
         override fun onStop(owner: LifecycleOwner) {
-            // App is going to the background
+            logInfo("AppLifecycleObserver: onStop (app to background)")
             stopSendingData()
         }
     }

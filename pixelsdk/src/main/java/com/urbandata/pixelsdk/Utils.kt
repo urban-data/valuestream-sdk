@@ -84,7 +84,14 @@ object Utils {
         Log.i(SDK_LOG_TAG, msg);
     }
 
-    suspend fun getStaticData(ctx: Context, pixelSDKParams: PixelSDKParams): PixelSDKParams {
+    suspend fun collectData(
+        ctx: Context,
+        startTime: Long,
+        pixelSDKParams: PixelSDKParams
+    ): PixelSDKParams {
+        logInfo("collectData: start")
+
+        // Device info
         pixelSDKParams.device_id = getHashedAndroidID(ctx)
         pixelSDKParams.device_type = getDeviceType(ctx)
         pixelSDKParams.device_os = getDeviceOS()
@@ -92,57 +99,61 @@ object Utils {
         pixelSDKParams.device_brand = getDeviceBrand() ?: ""
         pixelSDKParams.device_model = getDeviceModel() ?: ""
         pixelSDKParams.device_model_hmv = getDeviceHardware() ?: ""
-        val location = TrackerGps.getLocation()
 
+        // Location
+        logInfo("collectData: calling TrackerGps.getLocation()")
+        val location = TrackerGps.getLocation()
+        logInfo("collectData: TrackerGps.getLocation() returned")
         if (location != null) {
             val (country, countryCode) = getCountry(ctx, location.latitude, location.longitude)
-            pixelSDKParams.latitude = location.latitude.toString()
-            pixelSDKParams.longitude = location.longitude.toString()
-            pixelSDKParams.country = country
-            pixelSDKParams.country_code = countryCode
-        }
-
-        pixelSDKParams.maid = getMAID(ctx)
-        pixelSDKParams.maid_id = getMaidType()
-        pixelSDKParams.msisdn = getHashedMSISDN(ctx)
-        pixelSDKParams.imei = getHashedIMEI(ctx)
-        pixelSDKParams.app_name = getAppName(ctx)
-        pixelSDKParams.app_bundle = getAppBundleId(ctx)
-        pixelSDKParams.cell_id = getCellId(ctx)
-        pixelSDKParams.cell_lac = getCellLac(ctx)
-        pixelSDKParams.cell_mnc = getMNC(ctx)
-        pixelSDKParams.cell_mcc = getMCC(ctx)
-        return pixelSDKParams
-    }
-
-    suspend fun getDynamicData(
-        ctx: Context,
-        startTime: Long,
-        pixelSDKParams: PixelSDKParams
-    ): PixelSDKParams {
-        pixelSDKParams.unix_timestamp = getCurrentUnixTimestamp()
-        pixelSDKParams.connection_type = getConnectionType(ctx)
-        pixelSDKParams.connection_provider = getConnectionProvider(ctx)
-        val location = TrackerGps.getLocation()
-        if (location != null) {
+            logInfo("collectData: location lat=${location.latitude}, lon=${location.longitude}, countryCode=$countryCode")
             pixelSDKParams.latitude = location.latitude.toString()
             pixelSDKParams.longitude = location.longitude.toString()
             pixelSDKParams.altitude = location.altitude.toString()
+            pixelSDKParams.country = country
+            pixelSDKParams.country_code = countryCode
             pixelSDKParams.location_type = location.provider ?: ""
             pixelSDKParams.speed = location.speed.toString()
             pixelSDKParams.horizontalAccuracy = location.accuracy.toString()
             pixelSDKParams.verticalAccuracyMeters = location.verticalAccuracyMeters.toString()
+        } else {
+            logInfo("collectData: location is null")
         }
 
+        // IDs
+        pixelSDKParams.maid = getMAID(ctx)
+        pixelSDKParams.maid_id = getMaidType()
+        pixelSDKParams.msisdn = getHashedMSISDN(ctx)
+        pixelSDKParams.imei = getHashedIMEI(ctx)
+
+        // App info
+        pixelSDKParams.app_name = getAppName(ctx)
+        pixelSDKParams.app_bundle = getAppBundleId(ctx)
+
+        // Cell info
+        pixelSDKParams.cell_id = getCellId(ctx)
+        pixelSDKParams.cell_lac = getCellLac(ctx)
+        pixelSDKParams.cell_mnc = getMNC(ctx)
+        pixelSDKParams.cell_mcc = getMCC(ctx)
+
+        // Time & session
+        pixelSDKParams.unix_timestamp = getCurrentUnixTimestamp()
         pixelSDKParams.session_duration = timePassedSince(startTime)
-        pixelSDKParams.language = getCurrentLocaleLanguage()
-        pixelSDKParams.useragent = getUserAgent(ctx)
+
+        // Network
+        pixelSDKParams.connection_type = getConnectionType(ctx)
+        pixelSDKParams.connection_provider = getConnectionProvider(ctx)
         pixelSDKParams.ipv4 = getIPV4Address()
         pixelSDKParams.ipv6 = getIPV6Address()
         pixelSDKParams.bssid = getBSSID(ctx)
         pixelSDKParams.ssid = getSSID(ctx)
+
+        // Locale
+        pixelSDKParams.language = getCurrentLocaleLanguage()
+        pixelSDKParams.useragent = getUserAgent(ctx)
         pixelSDKParams.keyboard_language = getKeyboardLanguage(ctx)
 
+        logInfo("collectData: done")
         return pixelSDKParams
     }
 }
