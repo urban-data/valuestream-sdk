@@ -3,35 +3,33 @@ package com.urbandata.pixelsdk
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
-import android.location.Address
-import android.location.Geocoder
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.provider.Settings
+import android.telephony.CellInfo
 import android.telephony.CellInfoGsm
+import android.telephony.CellInfoLte
 import android.telephony.TelephonyManager
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebSettings
+import android.webkit.WebView
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.urbandata.pixelsdk.Utils.isPermissionGranted
+import com.urbandata.pixelsdk.Utils.logError
+import com.urbandata.pixelsdk.Utils.logInfo
+import com.urbandata.pixelsdk.Utils.md5Hash
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.internal.uppercase
+import org.json.JSONObject
+import java.net.HttpURLConnection
 import java.net.NetworkInterface
+import java.net.URL
 import java.util.Collections
 import java.util.Locale
-import android.location.Location
-import android.telephony.CellInfo
-import android.telephony.CellInfoLte
-import android.webkit.WebView
-import com.urbandata.pixelsdk.Utils.isPermissionGranted
-import com.urbandata.pixelsdk.Utils.logError
-import com.urbandata.pixelsdk.Utils.md5Hash
-import kotlinx.coroutines.tasks.await
 
 object InformationGatherer {
     fun getDeviceType(context: Context): String {
@@ -131,29 +129,40 @@ object InformationGatherer {
         return countryCode
     }
 
-    suspend fun getCountry(
-        context: Context,
-        latitude: Double,
-        longitude: Double
-    ): Pair<String, String> {
+    data class IpData(
+        val ip: String = "",
+        val country: String = "",
+        val countryCode: String = ""
+    )
+
+    suspend fun getIpData(): IpData {
         return withContext(Dispatchers.IO) {
-            val geocoder = Geocoder(context, Locale.getDefault())
-            var country = ""
-            var countryCode = ""
+            var result = IpData()
             try {
-                val addresses: List<Address>? = geocoder.getFromLocation(latitude, longitude, 1)
-                addresses?.let {
-                    if (it.isNotEmpty()) {
-                        val address = it[0]
-                        if (address.countryCode != null) {
-                            country = address.countryName
-                            countryCode = address.countryCode
-                        }
+                logInfo("getIpData: fetching IP and country")
+                val url = URL("http://ip-api.com/json/?fields=status,query,country,countryCode")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val response = connection.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(response)
+                    if (json.optString("status") == "success") {
+                        result = IpData(
+                            ip = json.optString("query", ""),
+                            country = json.optString("country", ""),
+                            countryCode = json.optString("countryCode", "")
+                        )
+                        logInfo("getIpData: ip=${result.ip}, country=${result.country}, countryCode=${result.countryCode}")
                     }
                 }
-            } catch (_: Exception) {
+                connection.disconnect()
+            } catch (e: Exception) {
+                logError("getIpData error: ${e.message}")
             }
-            Pair(country, countryCode)
+            result
         }
     }
 

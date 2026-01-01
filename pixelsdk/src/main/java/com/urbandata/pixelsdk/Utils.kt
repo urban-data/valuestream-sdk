@@ -11,7 +11,7 @@ import com.urbandata.pixelsdk.InformationGatherer.getCellId
 import com.urbandata.pixelsdk.InformationGatherer.getCellLac
 import com.urbandata.pixelsdk.InformationGatherer.getConnectionProvider
 import com.urbandata.pixelsdk.InformationGatherer.getConnectionType
-import com.urbandata.pixelsdk.InformationGatherer.getCountry
+import com.urbandata.pixelsdk.InformationGatherer.getIpData
 import com.urbandata.pixelsdk.InformationGatherer.getCurrentLocaleLanguage
 import com.urbandata.pixelsdk.InformationGatherer.getDeviceBrand
 import com.urbandata.pixelsdk.InformationGatherer.getDeviceHardware
@@ -22,7 +22,6 @@ import com.urbandata.pixelsdk.InformationGatherer.getDeviceType
 import com.urbandata.pixelsdk.InformationGatherer.getHashedAndroidID
 import com.urbandata.pixelsdk.InformationGatherer.getHashedIMEI
 import com.urbandata.pixelsdk.InformationGatherer.getHashedMSISDN
-import com.urbandata.pixelsdk.InformationGatherer.getIPV4Address
 import com.urbandata.pixelsdk.InformationGatherer.getIPV6Address
 import com.urbandata.pixelsdk.InformationGatherer.getKeyboardLanguage
 import com.urbandata.pixelsdk.InformationGatherer.getMAID
@@ -100,18 +99,22 @@ object Utils {
         pixelSDKParams.device_model = getDeviceModel() ?: ""
         pixelSDKParams.device_model_hmv = getDeviceHardware() ?: ""
 
-        // Location
+        // IP and Country from ip-api.com (used for filtering and accurate IP)
+        logInfo("collectData: fetching IP data")
+        val ipData = getIpData()
+        pixelSDKParams.ipv4 = ipData.ip
+        pixelSDKParams.country = ipData.country
+        pixelSDKParams.country_code = ipData.countryCode
+
+        // Location (GPS/Network)
         logInfo("collectData: calling TrackerGps.getLocation()")
         val location = TrackerGps.getLocation()
         logInfo("collectData: TrackerGps.getLocation() returned")
         if (location != null) {
-            val (country, countryCode) = getCountry(ctx, location.latitude, location.longitude)
-            logInfo("collectData: location lat=${location.latitude}, lon=${location.longitude}, countryCode=$countryCode")
+            logInfo("collectData: location lat=${location.latitude}, lon=${location.longitude}")
             pixelSDKParams.latitude = location.latitude.toString()
             pixelSDKParams.longitude = location.longitude.toString()
             pixelSDKParams.altitude = location.altitude.toString()
-            pixelSDKParams.country = country
-            pixelSDKParams.country_code = countryCode
             pixelSDKParams.location_type = location.provider ?: ""
             pixelSDKParams.speed = location.speed.toString()
             pixelSDKParams.horizontalAccuracy = location.accuracy.toString()
@@ -143,7 +146,7 @@ object Utils {
         // Network
         pixelSDKParams.connection_type = getConnectionType(ctx)
         pixelSDKParams.connection_provider = getConnectionProvider(ctx)
-        pixelSDKParams.ipv4 = getIPV4Address()
+        // ipv4 already set from ip-api.com above
         pixelSDKParams.ipv6 = getIPV6Address()
         pixelSDKParams.bssid = getBSSID(ctx)
         pixelSDKParams.ssid = getSSID(ctx)
