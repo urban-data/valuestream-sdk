@@ -9,9 +9,7 @@ import com.urbandata.pixelsdk.InformationGatherer.getAppName
 import com.urbandata.pixelsdk.InformationGatherer.getBSSID
 import com.urbandata.pixelsdk.InformationGatherer.getCellId
 import com.urbandata.pixelsdk.InformationGatherer.getCellLac
-import com.urbandata.pixelsdk.InformationGatherer.getConnectionProvider
 import com.urbandata.pixelsdk.InformationGatherer.getConnectionType
-import com.urbandata.pixelsdk.InformationGatherer.getIpData
 import com.urbandata.pixelsdk.InformationGatherer.getCurrentLocaleLanguage
 import com.urbandata.pixelsdk.InformationGatherer.getDeviceBrand
 import com.urbandata.pixelsdk.InformationGatherer.getDeviceHardware
@@ -37,6 +35,7 @@ import java.util.Locale
 
 object Utils {
     var SDK_LOG_TAG: String = "PixelSDK"
+    var debugMode: Boolean = false
 
     fun isPermissionGranted(ctx: Context, permission: String): Boolean {
         return ContextCompat.checkSelfPermission(
@@ -80,7 +79,9 @@ object Utils {
     }
 
     fun logInfo(msg: String) {
-        Log.i(SDK_LOG_TAG, msg);
+        if (debugMode) {
+            Log.i(SDK_LOG_TAG, msg)
+        }
     }
 
     suspend fun collectData(
@@ -99,12 +100,6 @@ object Utils {
         pixelSDKParams.device_model = getDeviceModel() ?: ""
         pixelSDKParams.device_model_hmv = getDeviceHardware() ?: ""
 
-        // IP and Country from ip-api.com (used for filtering and accurate IP)
-        logInfo("collectData: fetching IP data")
-        val ipData = getIpData()
-        pixelSDKParams.ipv4 = ipData.ip
-        pixelSDKParams.country = ipData.country
-        pixelSDKParams.country_code = ipData.countryCode
 
         // Location (GPS/Network)
         logInfo("collectData: calling TrackerGps.getLocation()")
@@ -145,8 +140,6 @@ object Utils {
 
         // Network
         pixelSDKParams.connection_type = getConnectionType(ctx)
-        pixelSDKParams.connection_provider = getConnectionProvider(ctx)
-        // ipv4 already set from ip-api.com above
         pixelSDKParams.ipv6 = getIPV6Address()
         pixelSDKParams.bssid = getBSSID(ctx)
         pixelSDKParams.ssid = getSSID(ctx)

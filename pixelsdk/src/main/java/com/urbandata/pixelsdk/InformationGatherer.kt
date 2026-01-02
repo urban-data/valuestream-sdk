@@ -19,15 +19,11 @@ import android.webkit.WebView
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.urbandata.pixelsdk.Utils.isPermissionGranted
 import com.urbandata.pixelsdk.Utils.logError
-import com.urbandata.pixelsdk.Utils.logInfo
 import com.urbandata.pixelsdk.Utils.md5Hash
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.internal.uppercase
-import org.json.JSONObject
-import java.net.HttpURLConnection
 import java.net.NetworkInterface
-import java.net.URL
 import java.util.Collections
 import java.util.Locale
 
@@ -127,43 +123,6 @@ object InformationGatherer {
             context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         countryCode = telephonyManager.networkCountryIso
         return countryCode
-    }
-
-    data class IpData(
-        val ip: String = "",
-        val country: String = "",
-        val countryCode: String = ""
-    )
-
-    suspend fun getIpData(): IpData {
-        return withContext(Dispatchers.IO) {
-            var result = IpData()
-            try {
-                logInfo("getIpData: fetching IP and country")
-                val url = URL("http://ip-api.com/json/?fields=status,query,country,countryCode")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = connection.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(response)
-                    if (json.optString("status") == "success") {
-                        result = IpData(
-                            ip = json.optString("query", ""),
-                            country = json.optString("country", ""),
-                            countryCode = json.optString("countryCode", "")
-                        )
-                        logInfo("getIpData: ip=${result.ip}, country=${result.country}, countryCode=${result.countryCode}")
-                    }
-                }
-                connection.disconnect()
-            } catch (e: Exception) {
-                logError("getIpData error: ${e.message}")
-            }
-            result
-        }
     }
 
     @SuppressLint("HardwareIds")

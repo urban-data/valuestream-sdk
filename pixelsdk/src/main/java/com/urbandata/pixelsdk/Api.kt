@@ -3,7 +3,17 @@ package com.urbandata.pixelsdk
 import retrofit2.Call
 import retrofit2.http.FieldMap
 import retrofit2.http.FormUrlEncoded
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
+
+data class IpDataResponse(
+    val ip: String?,
+    val cp: String?,
+    val cc: String?,
+    val lat: Double?,
+    val lon: Double?
+)
 
 data class PixelSDKResponse(
     var license_key: String,
@@ -101,6 +111,11 @@ fun mapPixelSDKParams(params: PixelSDKParams): Map<String, String?> {
 
 
 interface Api {
+    @GET("api/ipdata")
+    fun getIpData(
+        @Query("lk") licenseKey: String
+    ): Call<IpDataResponse>
+
     @FormUrlEncoded
     @POST("api/mobile_data")
     fun addData(
