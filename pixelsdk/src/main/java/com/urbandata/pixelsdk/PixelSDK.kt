@@ -152,6 +152,14 @@ object PixelSDK {
         pixelSDKParams.country_code = countryCode
         pixelSDKParams.connection_provider = ipDataResponse.cp ?: ""
 
+        // Fallback to IP-based location if GPS location not available
+        if (pixelSDKParams.latitude.isEmpty() && ipDataResponse.lat != null && ipDataResponse.lon != null) {
+            logInfo("sendData: GPS location not available, using IP-based location")
+            pixelSDKParams.latitude = ipDataResponse.lat.toString()
+            pixelSDKParams.longitude = ipDataResponse.lon.toString()
+            pixelSDKParams.location_type = "ip"
+        }
+
         logInfo("sendData: collectData done")
         logInfo("sendData: sending request")
         val requestBody = mapPixelSDKParams(pixelSDKParams)
