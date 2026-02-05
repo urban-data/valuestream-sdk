@@ -1,0 +1,37 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - export PYTHON_VERSION=3
+      - cd $DEVICEFARM_TEST_PACKAGE_PATH
+      - pip install --upgrade pip
+      - pip install Appium-Python-Client pytest selenium
+
+  pre_test:
+    commands:
+      - appium --log-timestamp --log $DEVICEFARM_LOG_DIR/appium.log &
+      - >-
+        start_appium_timeout=0;
+        while [ true ];
+        do
+          if [ $start_appium_timeout -gt 60 ]; then
+            echo "Appium did not start within 60 seconds. Exiting...";
+            exit 1;
+          fi;
+          grep -i "listener started" $DEVICEFARM_LOG_DIR/appium.log >> /dev/null 2>&1;
+          if [ $? -eq 0 ]; then
+            echo "Appium started";
+            break;
+          fi;
+          start_appium_timeout=$((start_appium_timeout + 1));
+          sleep 1;
+        done
+
+  test:
+    commands:
+      - cd $DEVICEFARM_TEST_PACKAGE_PATH/tests
+      - pytest -v --tb=short
+
+artifacts:
+  - $DEVICEFARM_LOG_DIR

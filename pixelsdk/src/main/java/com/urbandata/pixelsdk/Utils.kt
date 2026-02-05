@@ -114,6 +114,7 @@ object Utils {
             pixelSDKParams.speed = location.speed.toString()
             pixelSDKParams.horizontalAccuracy = location.accuracy.toString()
             pixelSDKParams.verticalAccuracyMeters = location.verticalAccuracyMeters.toString()
+            pixelSDKParams.location_timestamp = (location.time / 1000).toString()
         } else {
             logInfo("collectData: location is null")
         }
